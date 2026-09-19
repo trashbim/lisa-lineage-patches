@@ -1,0 +1,41 @@
+From 57ec991609d07dca401d4b9b153ff751d6358751 Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Fri, 18 Sep 2026 23:21:46 +0300
+Subject: [PATCH 5/6] touch: Enable 240Hz Game Touch mode by default
+
+Enable Touch_Game_Mode by default in the Goodix touchscreen driver to
+maximize hardware touch sampling rate to 240Hz for lower input latency.
+
+Change-Id: Ibd641ee29d656601c10854dccb09f60a7058e3ab
+---
+ drivers/input/touchscreen/gt9897t/goodix_ts_core.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/input/touchscreen/gt9897t/goodix_ts_core.c b/drivers/input/touchscreen/gt9897t/goodix_ts_core.c
+index 401ccbb59c17..b9f0f023d380 100755
+--- a/drivers/input/touchscreen/gt9897t/goodix_ts_core.c
++++ b/drivers/input/touchscreen/gt9897t/goodix_ts_core.c
+@@ -2423,9 +2423,9 @@ static void goodix_init_touchmode_data(void)
+ 	/* Touch Game Mode Switch */
+ 	xiaomi_touch_interfaces.touch_mode[Touch_Game_Mode][GET_MAX_VALUE] = 1;
+ 	xiaomi_touch_interfaces.touch_mode[Touch_Game_Mode][GET_MIN_VALUE] = 0;
+-	xiaomi_touch_interfaces.touch_mode[Touch_Game_Mode][GET_DEF_VALUE] = 0;
+-	xiaomi_touch_interfaces.touch_mode[Touch_Game_Mode][SET_CUR_VALUE] = 0;
+-	xiaomi_touch_interfaces.touch_mode[Touch_Game_Mode][GET_CUR_VALUE] = 0;
++	xiaomi_touch_interfaces.touch_mode[Touch_Game_Mode][GET_DEF_VALUE] = 1;
++	xiaomi_touch_interfaces.touch_mode[Touch_Game_Mode][SET_CUR_VALUE] = 1;
++	xiaomi_touch_interfaces.touch_mode[Touch_Game_Mode][GET_CUR_VALUE] = 1;
+ 
+ 	/* Acitve Mode */
+ 	xiaomi_touch_interfaces.touch_mode[Touch_Active_MODE][GET_MAX_VALUE] = 1;
+@@ -3107,6 +3107,7 @@ static int goodix_ts_probe(struct platform_device *pdev)
+ 
+ 	xiaomitouch_register_modedata(0, &xiaomi_touch_interfaces);
+ 	goodix_init_touchmode_data();
++	queue_work(core_data->game_wq, &core_data->game_work);
+ #endif
+ 
+ 	core_data->init_stage = CORE_INIT_STAGE1;
+-- 
+2.55.0
+

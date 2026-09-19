@@ -1,0 +1,27 @@
+From e619e8024b1bf43f60ada0fad221446b28c02065 Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Fri, 18 Sep 2026 23:36:45 +0300
+Subject: [PATCH 4/7] SettingsOverlaySM8350: Support 3 vibration intensity
+ levels
+
+Change-Id: I375249da1437770bd46ad80a82679dc067f1bb5c
+---
+ rro_overlays/SettingsOverlaySM8350/res/values/config.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/rro_overlays/SettingsOverlaySM8350/res/values/config.xml b/rro_overlays/SettingsOverlaySM8350/res/values/config.xml
+index 533ec2c..736bdb3 100644
+--- a/rro_overlays/SettingsOverlaySM8350/res/values/config.xml
++++ b/rro_overlays/SettingsOverlaySM8350/res/values/config.xml
+@@ -21,7 +21,7 @@
+          here. If this settings supports only 2 levels, for example, then the default intensity
+          should be either LOW (1) or HIGH (3).
+     -->
+-    <integer name="config_vibration_supported_intensity_levels">2</integer>
++    <integer name="config_vibration_supported_intensity_levels">3</integer>
+ 
+     <!-- Display settings screen, Color mode options. Must be the same length and order as
+          config_color_mode_options_values below. Only the values that also appear in
+-- 
+2.55.0
+

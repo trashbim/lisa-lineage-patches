@@ -1,0 +1,58 @@
+From 35f2f52af5180bbfb4e779998303d0ee18b10d67 Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Sat, 19 Sep 2026 00:10:13 +0300
+Subject: [PATCH 5/7] gps: Enable Qualcomm Robust Location and drop spoofed
+ location fixes
+
+Change-Id: Iffcb33617c6944d970a0da52d02746d1c2d13fff
+---
+ gps/android/2.1/location_api/GnssAPIClient.cpp |  7 +++++++
+ gps/gnss/GnssAdapter.cpp                       | 13 ++++++++-----
+ 2 files changed, 15 insertions(+), 5 deletions(-)
+
+diff --git a/gps/android/2.1/location_api/GnssAPIClient.cpp b/gps/android/2.1/location_api/GnssAPIClient.cpp
+index e1dc0d4..6ce9f65 100644
+--- a/gps/android/2.1/location_api/GnssAPIClient.cpp
++++ b/gps/android/2.1/location_api/GnssAPIClient.cpp
+@@ -499,6 +499,13 @@ void GnssAPIClient::onTrackingCb(Location location)
+         return;
+     }
+ 
++    if ((location.flags & LOCATION_HAS_SPOOF_MASK) &&
++        (location.spoofMask & LOCATION_POSTION_SPOOFED)) {
++        LOC_LOGW("%s]: Dropping location fix: modem detected position spoofing (spoofMask: 0x%x)",
++                 __FUNCTION__, location.spoofMask);
++        return;
++    }
++
+     if (gnssCbIface_2_1 != nullptr) {
+         V2_0::GnssLocation gnssLocation;
+         convertGnssLocation(location, gnssLocation);
+diff --git a/gps/gnss/GnssAdapter.cpp b/gps/gnss/GnssAdapter.cpp
+index 90d93db..447bca7 100644
+--- a/gps/gnss/GnssAdapter.cpp
++++ b/gps/gnss/GnssAdapter.cpp
+@@ -988,12 +988,15 @@ GnssAdapter::setConfig()
+         mLocApi->setPositionAssistedClockEstimatorMode(
+                 mLocConfigInfo.paceConfigInfo.enable);
+ 
+-        // we do not support control robust location from gps.conf
+-        if (mLocConfigInfo.robustLocationConfigInfo.isValid == true) {
+-            mLocApi->configRobustLocation(
+-                    mLocConfigInfo.robustLocationConfigInfo.enable,
+-                    mLocConfigInfo.robustLocationConfigInfo.enableFor911);
++        // Enable Qualcomm Robust Location (anti-spoofing and multi-constellation integrity monitoring)
++        if (mLocConfigInfo.robustLocationConfigInfo.isValid == false) {
++            mLocConfigInfo.robustLocationConfigInfo.isValid = true;
++            mLocConfigInfo.robustLocationConfigInfo.enable = true;
++            mLocConfigInfo.robustLocationConfigInfo.enableFor911 = true;
+         }
++        mLocApi->configRobustLocation(
++                mLocConfigInfo.robustLocationConfigInfo.enable,
++                mLocConfigInfo.robustLocationConfigInfo.enableFor911);
+ 
+         if (sapConf.GYRO_BIAS_RANDOM_WALK_VALID ||
+             sapConf.ACCEL_RANDOM_WALK_SPECTRAL_DENSITY_VALID ||
+-- 
+2.55.0
+

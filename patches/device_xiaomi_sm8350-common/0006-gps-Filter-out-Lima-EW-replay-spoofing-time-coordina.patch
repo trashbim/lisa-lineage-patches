@@ -1,0 +1,92 @@
+From 81a6c871d925ae9cd0739c56bb053e8abace993b Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Sat, 19 Sep 2026 23:38:51 +0300
+Subject: [PATCH 6/7] gps: Filter out Lima EW replay spoofing (time,
+ coordinates, and flight profile)
+
+Change-Id: Idb077866942cc4ba250b8752378894eb512fcddc
+---
+ .../2.1/location_api/GnssAPIClient.cpp        | 53 +++++++++++++++++--
+ 1 file changed, 49 insertions(+), 4 deletions(-)
+
+diff --git a/gps/android/2.1/location_api/GnssAPIClient.cpp b/gps/android/2.1/location_api/GnssAPIClient.cpp
+index 6ce9f65..95c09f3 100644
+--- a/gps/android/2.1/location_api/GnssAPIClient.cpp
++++ b/gps/android/2.1/location_api/GnssAPIClient.cpp
+@@ -32,6 +32,8 @@
+ #define SINGLE_SHOT_MIN_TRACKING_INTERVAL_MSEC (590 * 60 * 60 * 1000) // 590 hours
+ 
+ #include <inttypes.h>
++#include <time.h>
++#include <stdlib.h>
+ #include <log_util.h>
+ #include <loc_cfg.h>
+ 
+@@ -484,6 +486,51 @@ void GnssAPIClient::onCapabilitiesCb(LocationCapabilitiesMask capabilitiesMask)
+ 
+ }
+ 
++static bool isSpoofedLocation(const Location& location)
++{
++    // 1. Hardware modem spoof flags (if modem flagged position, time or nav data)
++    if ((location.flags & LOCATION_HAS_SPOOF_MASK) &&
++        (location.spoofMask & (LOCATION_POSTION_SPOOFED | LOCATION_TIME_SPOOFED | LOCATION_NAVIGATION_DATA_SPOOFED))) {
++        LOC_LOGW("%s]: Spoof detected: modem spoofMask=0x%x", __FUNCTION__, location.spoofMask);
++        return true;
++    }
++
++    // 2. Replay / Time discrepancy check (EW "Lima" replay attack transmits March 28, 2010!)
++    struct timespec ts;
++    if (clock_gettime(CLOCK_REALTIME, &ts) == 0) {
++        uint64_t nowMs = (uint64_t)ts.tv_sec * 1000ULL + (ts.tv_nsec / 1000000ULL);
++        // Valid system time threshold: after Jan 1, 2024 (1704067200000 ms)
++        if (nowMs > 1704067200000ULL && location.timestamp > 0) {
++            int64_t timeDiff = (int64_t)nowMs - (int64_t)location.timestamp;
++            if (timeDiff < 0) timeDiff = -timeDiff;
++            // Discrepancy > 1 hour (3600000 ms) between GPS time and phone network time
++            if (timeDiff > 3600000LL) {
++                LOC_LOGW("%s]: Spoof detected: time discrepancy! System=%llu, GPS=%llu (diff=%lld s)",
++                         __FUNCTION__, (unsigned long long)nowMs, (unsigned long long)location.timestamp,
++                         (long long)(timeDiff / 1000LL));
++                return true;
++            }
++        }
++    }
++
++    // 3. Known Lima, Peru spoofing coordinates (-12.03° S, -77.05° W)
++    if (location.latitude < -11.0 && location.latitude > -13.5 &&
++        location.longitude < -76.0 && location.longitude > -78.0) {
++        LOC_LOGW("%s]: Spoof detected: Lima, Peru coordinates (lat=%f, lon=%f)",
++                 __FUNCTION__, location.latitude, location.longitude);
++        return true;
++    }
++
++    // 4. Simulated aircraft/drone flight profile (200+ km/h at 1000m altitude)
++    if (location.speed > 50.0f && location.altitude > 800.0) {
++        LOC_LOGW("%s]: Spoof detected: drone flight profile (speed=%.1f km/h, alt=%.1f m)",
++                 __FUNCTION__, location.speed * 3.6f, location.altitude);
++        return true;
++    }
++
++    return false;
++}
++
+ void GnssAPIClient::onTrackingCb(Location location)
+ {
+     mMutex.lock();
+@@ -499,10 +546,8 @@ void GnssAPIClient::onTrackingCb(Location location)
+         return;
+     }
+ 
+-    if ((location.flags & LOCATION_HAS_SPOOF_MASK) &&
+-        (location.spoofMask & LOCATION_POSTION_SPOOFED)) {
+-        LOC_LOGW("%s]: Dropping location fix: modem detected position spoofing (spoofMask: 0x%x)",
+-                 __FUNCTION__, location.spoofMask);
++    if (isSpoofedLocation(location)) {
++        LOC_LOGW("%s]: Dropping spoofed GPS fix!", __FUNCTION__);
+         return;
+     }
+ 
+-- 
+2.55.0
+

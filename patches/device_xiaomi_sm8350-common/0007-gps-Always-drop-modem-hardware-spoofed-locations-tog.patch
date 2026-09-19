@@ -1,0 +1,39 @@
+From 6718347e6254a162db27464df84f37683f591295 Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Sun, 20 Sep 2026 00:05:59 +0300
+Subject: [PATCH 7/7] gps: Always drop modem hardware spoofed locations, toggle
+ heuristic EW filter
+
+Change-Id: I15eee1eb45dab67a7f446ce51d334392e4dfaa94
+---
+ gps/android/2.1/location_api/GnssAPIClient.cpp | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/gps/android/2.1/location_api/GnssAPIClient.cpp b/gps/android/2.1/location_api/GnssAPIClient.cpp
+index 95c09f3..48baf73 100644
+--- a/gps/android/2.1/location_api/GnssAPIClient.cpp
++++ b/gps/android/2.1/location_api/GnssAPIClient.cpp
+@@ -488,13 +488,19 @@ void GnssAPIClient::onCapabilitiesCb(LocationCapabilitiesMask capabilitiesMask)
+ 
+ static bool isSpoofedLocation(const Location& location)
+ {
+-    // 1. Hardware modem spoof flags (if modem flagged position, time or nav data)
++    // 1. Hardware modem spoof flags (Qualcomm Robust Location baseband detection)
++    // Always active: if the modem hardware explicitly flags the signal as spoofed, drop it.
+     if ((location.flags & LOCATION_HAS_SPOOF_MASK) &&
+         (location.spoofMask & (LOCATION_POSTION_SPOOFED | LOCATION_TIME_SPOOFED | LOCATION_NAVIGATION_DATA_SPOOFED))) {
+         LOC_LOGW("%s]: Spoof detected: modem spoofMask=0x%x", __FUNCTION__, location.spoofMask);
+         return true;
+     }
+ 
++    // Check user toggle from Settings for heuristic EW filters (default enabled)
++    if (!property_get_bool("persist.sys.gps.anti_spoof", true)) {
++        return false;
++    }
++
+     // 2. Replay / Time discrepancy check (EW "Lima" replay attack transmits March 28, 2010!)
+     struct timespec ts;
+     if (clock_gettime(CLOCK_REALTIME, &ts) == 0) {
+-- 
+2.55.0
+

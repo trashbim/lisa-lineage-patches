@@ -1,0 +1,42 @@
+From e69c20ea3f5b6679cee224844a445bfc7c24aed9 Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Fri, 18 Sep 2026 23:36:29 +0300
+Subject: [PATCH 3/7] gps.conf: Configure European NTP pool and Google SUPL for
+ fast A-GPS TTFF
+
+Change-Id: I16470b1027b5a9fc5aa2331ec9417670a058f49f
+---
+ gps/etc/gps.conf | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/gps/etc/gps.conf b/gps/etc/gps.conf
+index 3c259ee..e0bc9a3 100644
+--- a/gps/etc/gps.conf
++++ b/gps/etc/gps.conf
+@@ -4,9 +4,9 @@
+ ERR_ESTIMATE=0
+ 
+ #NTP server
+-NTP_SERVER=time.xtracloud.net
+-NTP_SERVER_2=asia.pool.ntp.org
+-NTP_SERVER_3=0.cn.pool.ntp.org
++NTP_SERVER=europe.pool.ntp.org
++NTP_SERVER_2=time.google.com
++NTP_SERVER_3=time.cloudflare.com
+ 
+ #XTRA CA path
+ XTRA_CA_PATH=/usr/lib/ssl-1.1/certs
+@@ -54,8 +54,8 @@ ACCURACY_THRES=70
+ ################################
+ 
+ # FOR SUPL SUPPORT, set the following
+-# SUPL_HOST=supl.host.com or IP
+-# SUPL_PORT=1234
++SUPL_HOST=supl.google.com
++SUPL_PORT=7275
+ 
+ # FOR MO SUPL SUPPORT, set the following
+ # MO_SUPL_HOST=supl.host.com or IP
+-- 
+2.55.0
+

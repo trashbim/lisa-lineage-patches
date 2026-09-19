@@ -1,0 +1,25 @@
+From e9ae23d61c6fed508fba2eb6738e7e5ac0f0c91e Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Fri, 18 Sep 2026 23:36:50 +0300
+Subject: [PATCH 3/3] FrameworkOverlayLisa: Enable keyboard vibration settings
+
+Change-Id: Ic1df1f463bf239591b19dcca8b829d00f56b7973
+---
+ rro_overlays/FrameworkOverlayLisa/res/values/config.xml | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/rro_overlays/FrameworkOverlayLisa/res/values/config.xml b/rro_overlays/FrameworkOverlayLisa/res/values/config.xml
+index bfa0740..0a1ec1b 100644
+--- a/rro_overlays/FrameworkOverlayLisa/res/values/config.xml
++++ b/rro_overlays/FrameworkOverlayLisa/res/values/config.xml
+@@ -355,4 +355,7 @@
+          rates are available from hardware composer. Only has an effect if the value is
+          non-zero. -->
+     <integer name="config_defaultPeakRefreshRate">90</integer>
++
++    <!-- Whether keyboard vibration settings are supported in Settings -->
++    <bool name="config_keyboardVibrationSettingsSupported">true</bool>
+ </resources>
+-- 
+2.55.0
+

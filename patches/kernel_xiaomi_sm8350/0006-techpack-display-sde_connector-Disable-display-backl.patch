@@ -1,0 +1,46 @@
+From 874947a3c78cc723c34907ad20510ec89777417d Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Fri, 18 Sep 2026 23:36:40 +0300
+Subject: [PATCH 6/6] techpack: display: sde_connector: Disable display
+ backlight thermal throttling
+
+Change-Id: Ie8d6e37851a6da1f5477c9f7185fe5ce02c9fd89
+---
+ techpack/display/msm/sde/sde_connector.c | 12 ++++--------
+ 1 file changed, 4 insertions(+), 8 deletions(-)
+
+diff --git a/techpack/display/msm/sde/sde_connector.c b/techpack/display/msm/sde/sde_connector.c
+index fd62c06c9d1f..f52ded29ae4e 100644
+--- a/techpack/display/msm/sde/sde_connector.c
++++ b/techpack/display/msm/sde/sde_connector.c
+@@ -117,8 +117,11 @@ static int sde_backlight_device_update_status(struct backlight_device *bd)
+ 	display = (struct dsi_display *) c_conn->display;
+ 	if (brightness > display->panel->bl_config.brightness_max_level)
+ 		brightness = display->panel->bl_config.brightness_max_level;
++	/* Disable thermal brightness throttling */
++	/*
+ 	if (brightness > c_conn->thermal_max_brightness)
+ 		brightness = c_conn->thermal_max_brightness;
++	*/
+ 
+ 	if (brightness) {
+ 		int bl_min = display->panel->bl_config.bl_min_level ? : 1;
+@@ -176,14 +179,7 @@ static const struct backlight_ops sde_backlight_device_ops = {
+ static int sde_backlight_cooling_cb(struct notifier_block *nb,
+ 					unsigned long val, void *data)
+ {
+-	struct sde_connector *c_conn;
+-	struct backlight_device *bd = (struct backlight_device *)data;
+-
+-	c_conn = bl_get_data(bd);
+-	SDE_DEBUG("bl: thermal max brightness cap:%lu\n", val);
+-	c_conn->thermal_max_brightness = val;
+-
+-	sde_backlight_device_update_status(bd);
++	/* Ignore thermal throttle caps on display backlight to maintain max brightness outdoors */
+ 	return 0;
+ }
+ 
+-- 
+2.55.0
+

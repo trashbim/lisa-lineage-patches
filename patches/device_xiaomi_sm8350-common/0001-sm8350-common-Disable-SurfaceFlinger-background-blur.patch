@@ -1,0 +1,31 @@
+From 7459ee3c494f83dd2a513b83a598d5168ec2cbf5 Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Fri, 18 Sep 2026 23:14:43 +0300
+Subject: [PATCH 1/7] sm8350-common: Disable SurfaceFlinger background blur for
+ improved fluidity
+
+Disable real-time background blur in SurfaceFlinger to eliminate GPU shader
+overhead during notification shade pull-down and recents transitions,
+achieving rock-solid 90 FPS rendering and reducing battery consumption.
+
+Change-Id: Ibe30da515fc4afaa83ae55e9e06959152fe0031f
+---
+ vendor.prop | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/vendor.prop b/vendor.prop
+index e6c9e02..d5dd376 100644
+--- a/vendor.prop
++++ b/vendor.prop
+@@ -195,7 +195,7 @@ ro.surface_flinger.max_frame_buffer_acquired_buffers=3
+ ro.surface_flinger.max_virtual_display_dimension=4096
+ ro.surface_flinger.protected_contents=true
+ ro.surface_flinger.set_touch_timer_ms?=200
+-ro.surface_flinger.supports_background_blur=1
++ro.surface_flinger.supports_background_blur=0
+ ro.surface_flinger.use_color_management=true
+ ro.surface_flinger.use_content_detection_for_refresh_rate?=true
+ ro.surface_flinger.wcg_composition_dataspace=143261696
+-- 
+2.55.0
+

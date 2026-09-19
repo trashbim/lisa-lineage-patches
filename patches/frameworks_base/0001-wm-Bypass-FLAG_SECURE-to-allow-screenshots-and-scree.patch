@@ -1,0 +1,76 @@
+From b597b187cffdcb1c6962b26fe32f341fcd5c3e53 Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Fri, 18 Sep 2026 23:10:03 +0300
+Subject: [PATCH] wm: Bypass FLAG_SECURE to allow screenshots and screen
+ recording anywhere
+
+Bypass WindowManager FLAG_SECURE enforcement in WindowState, Task, and
+WindowManagerService so that users can take screenshots, record the screen,
+and see recent task snapshots in any app without restriction.
+
+Change-Id: I2a559f6ba9c6bdbe4ed7c867861fa41c5c3d2a0f
+---
+ .../core/java/com/android/server/wm/Task.java    |  5 +----
+ .../android/server/wm/WindowManagerService.java  |  2 +-
+ .../java/com/android/server/wm/WindowState.java  | 16 +---------------
+ 3 files changed, 3 insertions(+), 20 deletions(-)
+
+diff --git a/services/core/java/com/android/server/wm/Task.java b/services/core/java/com/android/server/wm/Task.java
+index b5698711e..c8e964c98 100644
+--- a/services/core/java/com/android/server/wm/Task.java
++++ b/services/core/java/com/android/server/wm/Task.java
+@@ -7061,10 +7061,7 @@ class Task extends TaskFragment {
+     }
+ 
+     boolean isSecure() {
+-        if (mWmService.getDisableSecureWindows()) {
+-            return false;
+-        }
+-        return !DevicePolicyCache.getInstance().isScreenCaptureAllowed(mUserId);
++        return false;
+     }
+ 
+     void setExcludeLayersFromTaskSnapshot(SurfaceControl[] layers) throws RemoteException {
+diff --git a/services/core/java/com/android/server/wm/WindowManagerService.java b/services/core/java/com/android/server/wm/WindowManagerService.java
+index c4fd7cad4..4cdc97bc3 100644
+--- a/services/core/java/com/android/server/wm/WindowManagerService.java
++++ b/services/core/java/com/android/server/wm/WindowManagerService.java
+@@ -10881,7 +10881,7 @@ public class WindowManagerService extends IWindowManager.Stub
+     }
+ 
+     boolean getDisableSecureWindows() {
+-        return mDisableSecureWindows;
++        return true;
+     }
+ 
+     /**
+diff --git a/services/core/java/com/android/server/wm/WindowState.java b/services/core/java/com/android/server/wm/WindowState.java
+index c90391bdb..69209fd9c 100644
+--- a/services/core/java/com/android/server/wm/WindowState.java
++++ b/services/core/java/com/android/server/wm/WindowState.java
+@@ -1872,21 +1872,7 @@ class WindowState extends WindowContainer<WindowState> implements WindowManagerP
+     }
+ 
+     boolean isSecureLocked() {
+-        if (mWmService.getDisableSecureWindows()) {
+-            return false;
+-        }
+-
+-        if ((mAttrs.flags & WindowManager.LayoutParams.FLAG_SECURE) != 0) {
+-            return true;
+-        }
+-
+-        // block screen capture to protect sensitive notifications or content on the screen.
+-        if (mWmService.mSensitiveContentPackages.shouldBlockScreenCaptureForApp(
+-                getOwningPackage(), getOwningUid(), getWindowToken())) {
+-            return true;
+-        }
+-
+-        return !DevicePolicyCache.getInstance().isScreenCaptureAllowed(mShowUserId);
++        return false;
+     }
+ 
+     /**
+-- 
+2.55.0
+

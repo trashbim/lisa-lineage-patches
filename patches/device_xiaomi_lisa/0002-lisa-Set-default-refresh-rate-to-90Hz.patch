@@ -1,0 +1,26 @@
+From 1a1d0de40fe6910c90de66221a7c72e077d109e1 Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Fri, 18 Sep 2026 23:21:01 +0300
+Subject: [PATCH 2/3] lisa: Set default refresh rate to 90Hz
+
+Change-Id: I892997990ae13cca758e52cd8a2e262582f10c23
+---
+ rro_overlays/FrameworkOverlayLisa/res/values/config.xml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/rro_overlays/FrameworkOverlayLisa/res/values/config.xml b/rro_overlays/FrameworkOverlayLisa/res/values/config.xml
+index a4c6d33..bfa0740 100644
+--- a/rro_overlays/FrameworkOverlayLisa/res/values/config.xml
++++ b/rro_overlays/FrameworkOverlayLisa/res/values/config.xml
+@@ -348,7 +348,7 @@
+          If a non-zero value is set for config_defaultPeakRefreshRate, then
+          config_defaultRefreshRate may be set to 0, in which case the value set for
+          config_defaultPeakRefreshRate will act as the default frame rate. -->
+-    <integer name="config_defaultRefreshRate">0</integer>
++    <integer name="config_defaultRefreshRate">90</integer>
+ 
+     <!-- The default peak refresh rate for a given device. Change this value if you want to prevent
+          the framework from using higher refresh rates, even if display modes with higher refresh
+-- 
+2.55.0
+
