@@ -1,7 +1,7 @@
 From e69c20ea3f5b6679cee224844a445bfc7c24aed9 Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Fri, 18 Sep 2026 23:36:29 +0300
-Subject: [PATCH 3/7] gps.conf: Configure European NTP pool and Google SUPL for
+Subject: [PATCH 3/8] gps.conf: Configure European NTP pool and Google SUPL for
  fast A-GPS TTFF
 
 Change-Id: I16470b1027b5a9fc5aa2331ec9417670a058f49f

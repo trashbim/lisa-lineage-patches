@@ -1,0 +1,106 @@
+From 0031b84f4677840bba72f2ac227aa0200603ce74 Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Sun, 20 Sep 2026 01:20:57 +0300
+Subject: [PATCH 8/8] sm8350-common: Set ZRAM disk size to 80% of RAM size for
+ zstd
+
+Change-Id: I4507e460caf0879267a0e215f8753772d97277dd
+---
+ rootdir/bin/init.kernel.post_boot-lahaina.sh | 15 ++++-----------
+ rootdir/bin/init.kernel.post_boot-shima.sh   | 15 ++++-----------
+ rootdir/bin/init.kernel.post_boot-yupik.sh   | 15 ++++-----------
+ 3 files changed, 12 insertions(+), 33 deletions(-)
+
+diff --git a/rootdir/bin/init.kernel.post_boot-lahaina.sh b/rootdir/bin/init.kernel.post_boot-lahaina.sh
+index c79fc04..945713c 100755
+--- a/rootdir/bin/init.kernel.post_boot-lahaina.sh
++++ b/rootdir/bin/init.kernel.post_boot-lahaina.sh
+@@ -36,21 +36,14 @@ function configure_zram_parameters() {
+ 
+ 	low_ram=`getprop ro.config.low_ram`
+ 
+-	# Zram disk - 75% for Go and < 2GB devices .
+-	# For >2GB Non-Go devices, size = 50% of RAM size. Limit the size to 4GB.
+-	# And enable lz4 zram compression for Go targets.
+-
++	# Zram disk - 80% of RAM size for optimal multitasking with zstd compression.
+ 	let RamSizeGB="( $MemTotal / 1048576 ) + 1"
+ 	diskSizeUnit=M
+-	if [ $RamSizeGB -le 2 ]; then
+-		let zRamSizeMB="( $RamSizeGB * 1024 ) * 3 / 4"
+-	else
+-		let zRamSizeMB="( $RamSizeGB * 1024 ) / 2"
+-	fi
++	let zRamSizeMB="( $RamSizeGB * 1024 ) * 80 / 100"
+ 
+ 	# use MB avoid 32 bit overflow
+-	if [ $zRamSizeMB -gt 4096 ]; then
+-		let zRamSizeMB=4096
++	if [ $zRamSizeMB -gt 8192 ]; then
++		let zRamSizeMB=8192
+ 	fi
+ 
+ 	if [ "$low_ram" == "true" ]; then
+diff --git a/rootdir/bin/init.kernel.post_boot-shima.sh b/rootdir/bin/init.kernel.post_boot-shima.sh
+index d16146a..67ba2c0 100755
+--- a/rootdir/bin/init.kernel.post_boot-shima.sh
++++ b/rootdir/bin/init.kernel.post_boot-shima.sh
+@@ -36,21 +36,14 @@ function configure_zram_parameters() {
+ 
+ 	low_ram=`getprop ro.config.low_ram`
+ 
+-	# Zram disk - 75% for Go and < 2GB devices .
+-	# For >2GB Non-Go devices, size = 50% of RAM size. Limit the size to 4GB.
+-	# And enable lz4 zram compression for Go targets.
+-
++	# Zram disk - 80% of RAM size for optimal multitasking with zstd compression.
+ 	let RamSizeGB="( $MemTotal / 1048576 ) + 1"
+ 	diskSizeUnit=M
+-	if [ $RamSizeGB -le 2 ]; then
+-		let zRamSizeMB="( $RamSizeGB * 1024 ) * 3 / 4"
+-	else
+-		let zRamSizeMB="( $RamSizeGB * 1024 ) / 2"
+-	fi
++	let zRamSizeMB="( $RamSizeGB * 1024 ) * 80 / 100"
+ 
+ 	# use MB avoid 32 bit overflow
+-	if [ $zRamSizeMB -gt 4096 ]; then
+-		let zRamSizeMB=4096
++	if [ $zRamSizeMB -gt 8192 ]; then
++		let zRamSizeMB=8192
+ 	fi
+ 
+ 	if [ "$low_ram" == "true" ]; then
+diff --git a/rootdir/bin/init.kernel.post_boot-yupik.sh b/rootdir/bin/init.kernel.post_boot-yupik.sh
+index ad6b0d2..7801dd6 100755
+--- a/rootdir/bin/init.kernel.post_boot-yupik.sh
++++ b/rootdir/bin/init.kernel.post_boot-yupik.sh
+@@ -36,21 +36,14 @@ function configure_zram_parameters() {
+ 
+ 	low_ram=`getprop ro.config.low_ram`
+ 
+-	# Zram disk - 75% for Go and < 2GB devices .
+-	# For >2GB Non-Go devices, size = 50% of RAM size. Limit the size to 4GB.
+-	# And enable lz4 zram compression for Go targets.
+-
++	# Zram disk - 80% of RAM size for optimal multitasking with zstd compression.
+ 	let RamSizeGB="( $MemTotal / 1048576 ) + 1"
+ 	diskSizeUnit=M
+-	if [ $RamSizeGB -le 2 ]; then
+-		let zRamSizeMB="( $RamSizeGB * 1024 ) * 3 / 4"
+-	else
+-		let zRamSizeMB="( $RamSizeGB * 1024 ) / 2"
+-	fi
++	let zRamSizeMB="( $RamSizeGB * 1024 ) * 80 / 100"
+ 
+ 	# use MB avoid 32 bit overflow
+-	if [ $zRamSizeMB -gt 4096 ]; then
+-		let zRamSizeMB=4096
++	if [ $zRamSizeMB -gt 8192 ]; then
++		let zRamSizeMB=8192
+ 	fi
+ 
+ 	if [ "$low_ram" == "true" ]; then
+-- 
+2.55.0
+

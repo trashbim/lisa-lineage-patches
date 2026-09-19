@@ -36,6 +36,7 @@ Custom optimizations, hardware tweaks, and EW (electronic warfare) anti-spoofing
   * Set 18 media volume steps for finer volume adjustment.
   * Disabled SurfaceFlinger background blur for maximum fluidity and lower GPU power draw.
   * Supported 3 haptic vibration intensity levels.
+  * Configured ZRAM disk size to 80% of physical RAM (~4.9 GB on 6GB model, ~6.5 GB on 8GB model) paired with kernel `zstd` compression for superior app retention.
 
 ---
 
