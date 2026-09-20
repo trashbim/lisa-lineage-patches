@@ -1,7 +1,7 @@
 From aa7a1ebeb7126c7ba5fdce06e47227ce322063c2 Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Fri, 18 Sep 2026 20:42:44 +0300
-Subject: [PATCH 4/6] zram: Switch default compression algorithm to zstd
+Subject: [PATCH 4/7] zram: Switch default compression algorithm to zstd
 
 Change-Id: Ifdc650b0ce9af8c1121d1721854a55afbccfc787
 ---

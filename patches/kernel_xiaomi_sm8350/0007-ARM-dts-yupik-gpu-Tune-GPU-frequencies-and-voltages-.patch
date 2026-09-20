@@ -1,0 +1,142 @@
+From e09f9264a6837312ea64fda1a1332a08334bafc2 Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Sun, 20 Sep 2026 03:02:24 +0300
+Subject: [PATCH 7/7] ARM: dts: yupik-gpu: Tune GPU frequencies and voltages
+ for speed-bin 117
+
+Update speed-bin 117 power levels with proven 180-563 MHz profile:
+- 563 MHz: Upper boost overclock
+- 512 MHz: SVS (128) undervolt
+- 472 MHz: LOW_SVS_L2 (96) undervolt
+- 378 MHz: LOW_SVS_L1 (80) undervolt
+- 240 MHz: LOW_SVS (64)
+- 180 MHz: RETENTION (16) idle frequency
+
+Change-Id: I0d44b0d72ebb5fad22808f2ab96b3ff03dc1a384
+---
+ .../arm64/boot/dts/vendor/qcom/yupik-gpu.dtsi | 82 +++++++++++++++----
+ 1 file changed, 65 insertions(+), 17 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/vendor/qcom/yupik-gpu.dtsi b/arch/arm64/boot/dts/vendor/qcom/yupik-gpu.dtsi
+index da9b0fdd4f37..1b0ffdd35399 100644
+--- a/arch/arm64/boot/dts/vendor/qcom/yupik-gpu.dtsi
++++ b/arch/arm64/boot/dts/vendor/qcom/yupik-gpu.dtsi
+@@ -398,43 +398,75 @@
+ 				#size-cells = <0>;
+ 
+ 				qcom,speed-bin = <117>;
+-				qcom,initial-pwrlevel = <2>;
++				qcom,initial-pwrlevel = <5>;
+ 
+ 				qcom,gpu-pwrlevel@0 {
+ 					reg = <0>;
+-					qcom,gpu-freq = <550000000>;
+-					qcom,level = <RPMH_REGULATOR_LEVEL_SVS_L1>;
++					qcom,gpu-freq = <563000000>;
++					qcom,level = <RPMH_REGULATOR_LEVEL_SVS_L2>;
+ 
+-					qcom,bus-freq-ddr7 = <9>;
+-					qcom,bus-min-ddr7 = <8>;
+-					qcom,bus-max-ddr7 = <11>;
++					qcom,bus-freq-ddr7 = <12>;
++					qcom,bus-min-ddr7 = <12>;
++					qcom,bus-max-ddr7 = <12>;
+ 
+-					qcom,bus-freq-ddr8 = <7>;
+-					qcom,bus-min-ddr8 = <6>;
+-					qcom,bus-max-ddr8 = <9>;
++					qcom,bus-freq-ddr8 = <11>;
++					qcom,bus-min-ddr8 = <11>;
++					qcom,bus-max-ddr8 = <11>;
+ 
+ 					qcom,acd-level = <0x802B5FFD>;
+ 				};
+ 
+ 				qcom,gpu-pwrlevel@1 {
+ 					reg = <1>;
+-					qcom,gpu-freq = <450000000>;
++					qcom,gpu-freq = <512000000>;
+ 					qcom,level = <RPMH_REGULATOR_LEVEL_SVS>;
+ 
+-					qcom,bus-freq-ddr7 = <6>;
+-					qcom,bus-min-ddr7 = <5>;
+-					qcom,bus-max-ddr7 = <10>;
++					qcom,bus-freq-ddr7 = <11>;
++					qcom,bus-min-ddr7 = <9>;
++					qcom,bus-max-ddr7 = <11>;
+ 
+-					qcom,bus-freq-ddr8 = <6>;
+-					qcom,bus-min-ddr8 = <6>;
+-					qcom,bus-max-ddr8 = <8>;
++					qcom,bus-freq-ddr8 = <8>;
++					qcom,bus-min-ddr8 = <8>;
++					qcom,bus-max-ddr8 = <9>;
+ 
+ 					qcom,acd-level = <0x802B5FFD>;
+ 				};
+ 
+ 				qcom,gpu-pwrlevel@2 {
+ 					reg = <2>;
+-					qcom,gpu-freq = <315000000>;
++					qcom,gpu-freq = <472000000>;
++					qcom,level = <RPMH_REGULATOR_LEVEL_LOW_SVS_L2>;
++
++					qcom,bus-freq-ddr7 = <6>;
++					qcom,bus-min-ddr7 = <5>;
++					qcom,bus-max-ddr7 = <10>;
++
++					qcom,bus-freq-ddr8 = <7>;
++					qcom,bus-min-ddr8 = <6>;
++					qcom,bus-max-ddr8 = <8>;
++
++					qcom,acd-level = <0x802B5FFD>;
++				};
++
++				qcom,gpu-pwrlevel@3 {
++					reg = <3>;
++					qcom,gpu-freq = <378000000>;
++					qcom,level = <RPMH_REGULATOR_LEVEL_LOW_SVS_L1>;
++
++					qcom,bus-freq-ddr7 = <3>;
++					qcom,bus-min-ddr7 = <2>;
++					qcom,bus-max-ddr7 = <9>;
++
++					qcom,bus-freq-ddr8 = <3>;
++					qcom,bus-min-ddr8 = <2>;
++					qcom,bus-max-ddr8 = <7>;
++
++					qcom,acd-level = <0x882F5FFD>;
++				};
++
++				qcom,gpu-pwrlevel@4 {
++					reg = <4>;
++					qcom,gpu-freq = <240000000>;
+ 					qcom,level = <RPMH_REGULATOR_LEVEL_LOW_SVS>;
+ 
+ 					qcom,bus-freq-ddr7 = <3>;
+@@ -447,6 +479,22 @@
+ 
+ 					qcom,acd-level = <0x882F5FFD>;
+ 				};
++
++				qcom,gpu-pwrlevel@5 {
++					reg = <5>;
++					qcom,gpu-freq = <180000000>;
++					qcom,level = <RPMH_REGULATOR_LEVEL_RETENTION>;
++
++					qcom,bus-freq-ddr7 = <2>;
++					qcom,bus-min-ddr7 = <2>;
++					qcom,bus-max-ddr7 = <2>;
++
++					qcom,bus-freq-ddr8 = <2>;
++					qcom,bus-min-ddr8 = <2>;
++					qcom,bus-max-ddr8 = <2>;
++
++					qcom,acd-level = <0x882F5FFD>;
++				};
+ 			};
+ 			qcom,gpu-pwrlevels-3 {
+ 				#address-cells = <1>;
+-- 
+2.55.0
+

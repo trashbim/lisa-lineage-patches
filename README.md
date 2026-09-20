@@ -18,6 +18,7 @@ Custom optimizations, hardware tweaks, and EW (electronic warfare) anti-spoofing
   * **A-GPS & NTP Configuration**: Configured European NTP pools and Google SUPL for instant TTFF fix.
 
 ### 2. Kernel Tweaks (`kernel_xiaomi_sm8350`)
+* **GPU Overclock & Undervolt (Adreno 642L / Yupik)**: Tuned `speed-bin 117` frequency table with 180-563 MHz profile (563 MHz boost overclock, undervolted mid-frequencies, and 180 MHz low-power idle step with optimized DDR memory bus bandwidth).
 * **Display Backlight Thermal Throttling**: Removed panel dimming under thermal load in `sde_connector`.
 * **240Hz Game Touch**: Enabled 240Hz touch sampling rate by default for ultra-responsive input.
 * **Touch Stalls**: Removed Goodix panel detection stall during boot.
