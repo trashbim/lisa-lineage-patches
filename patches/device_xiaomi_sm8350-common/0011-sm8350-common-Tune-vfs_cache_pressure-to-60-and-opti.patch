@@ -1,0 +1,71 @@
+From 340bcee67714a6483835f426c1caf19f428b57ea Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Mon, 21 Sep 2026 15:11:27 +0300
+Subject: [PATCH 11/11] sm8350-common: Tune vfs_cache_pressure to 60 and
+ optimize disconnected Wi-Fi scanning
+
+- Set vm.vfs_cache_pressure to 60 to keep directory and inode dentry caches longer in RAM for faster app switching and file navigation
+- Increase Wi-Fi PNO moving scan interval to 60s (from 20s) and stationary to 120s (from 60s) to reduce outdoor battery drain
+- Set screen-on disconnected scan intervals to 30/60/120/240s
+
+Change-Id: I7f5ce9bf8ee83f2397c9a394693bceecbe404043
+---
+ rootdir/bin/init.kernel.post_boot-yupik.sh          |  1 +
+ rootdir/etc/init.qti.kernel.rc                      |  2 ++
+ .../WifiOverlaySM8350/res/values/config.xml         | 13 +++++++++++++
+ 3 files changed, 16 insertions(+)
+
+diff --git a/rootdir/bin/init.kernel.post_boot-yupik.sh b/rootdir/bin/init.kernel.post_boot-yupik.sh
+index a4f8e49..7a350e4 100755
+--- a/rootdir/bin/init.kernel.post_boot-yupik.sh
++++ b/rootdir/bin/init.kernel.post_boot-yupik.sh
+@@ -110,6 +110,7 @@ function configure_memory_parameters() {
+ 	configure_read_ahead_kb_values
+ 	echo 100 > /proc/sys/vm/swappiness
+ 	echo 10 > /proc/sys/vm/stat_interval
++	echo 60 > /proc/sys/vm/vfs_cache_pressure
+ 
+         # Disable wsf  beacause we are using efk.
+         # wsf Range : 1..1000. So set to bare minimum value 1.
+diff --git a/rootdir/etc/init.qti.kernel.rc b/rootdir/etc/init.qti.kernel.rc
+index dd549f3..debd98d 100644
+--- a/rootdir/etc/init.qti.kernel.rc
++++ b/rootdir/etc/init.qti.kernel.rc
+@@ -67,10 +67,12 @@ service kernel-post-boot /vendor/bin/sh /vendor/bin/init.kernel.post_boot.sh
+ on property:sys.boot_completed=1
+     write /proc/sys/vm/page-cluster 0
+     write /proc/sys/vm/stat_interval 10
++    write /proc/sys/vm/vfs_cache_pressure 60
+ 
+     start kernel-post-boot
+ 
+ 
++
+ service vendor.msm_irqbalance /vendor/bin/msm_irqbalance -f /system/vendor/etc/msm_irqbalance.conf
+     class core
+     user root
+diff --git a/rro_overlays/WifiOverlaySM8350/res/values/config.xml b/rro_overlays/WifiOverlaySM8350/res/values/config.xml
+index 8343921..7120b2c 100644
+--- a/rro_overlays/WifiOverlaySM8350/res/values/config.xml
++++ b/rro_overlays/WifiOverlaySM8350/res/values/config.xml
+@@ -70,4 +70,17 @@
+          immediately after the country code is sent to the driver (if the method returns a
+          success). -->
+     <bool name="config_wifiDriverSupportedNl80211RegChangedEvent">true</bool>
++
++    <!-- Increase PNO scan intervals when disconnected to reduce battery drain outdoors -->
++    <integer translatable="false" name="config_wifiMovingPnoScanIntervalMillis">60000</integer>
++    <integer translatable="false" name="config_wifiStationaryPnoScanIntervalMillis">120000</integer>
++
++    <!-- Disconnected scan interval schedule in seconds when screen is on -->
++    <integer-array translatable="false" name="config_wifiDisconnectedScanIntervalScheduleSec">
++        <item>30</item>
++        <item>60</item>
++        <item>120</item>
++        <item>240</item>
++    </integer-array>
+ </resources>
++
+-- 
+2.55.0
+

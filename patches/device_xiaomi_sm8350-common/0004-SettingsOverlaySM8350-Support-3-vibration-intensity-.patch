@@ -1,7 +1,7 @@
 From e619e8024b1bf43f60ada0fad221446b28c02065 Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Fri, 18 Sep 2026 23:36:45 +0300
-Subject: [PATCH 04/10] SettingsOverlaySM8350: Support 3 vibration intensity
+Subject: [PATCH 04/11] SettingsOverlaySM8350: Support 3 vibration intensity
  levels
 
 Change-Id: I375249da1437770bd46ad80a82679dc067f1bb5c

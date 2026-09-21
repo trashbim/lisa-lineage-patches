@@ -1,7 +1,7 @@
 From 7459ee3c494f83dd2a513b83a598d5168ec2cbf5 Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Fri, 18 Sep 2026 23:14:43 +0300
-Subject: [PATCH 01/10] sm8350-common: Disable SurfaceFlinger background blur
+Subject: [PATCH 01/11] sm8350-common: Disable SurfaceFlinger background blur
  for improved fluidity
 
 Disable real-time background blur in SurfaceFlinger to eliminate GPU shader

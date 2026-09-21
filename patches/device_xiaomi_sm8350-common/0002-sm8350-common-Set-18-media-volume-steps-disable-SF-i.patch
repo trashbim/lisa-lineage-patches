@@ -1,7 +1,7 @@
 From b9bc719ffca17c3602d48c2cb8b930c4db8a5215 Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Fri, 18 Sep 2026 23:20:57 +0300
-Subject: [PATCH 02/10] sm8350-common: Set 18 media volume steps, disable SF
+Subject: [PATCH 02/11] sm8350-common: Set 18 media volume steps, disable SF
  idle drop, disable QC logging
 
 Change-Id: Ic106efff98637f4b80e4239c4ebc80a2f5404420

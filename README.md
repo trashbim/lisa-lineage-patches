@@ -35,6 +35,8 @@ Custom optimizations, hardware tweaks, and EW (electronic warfare) anti-spoofing
   * Enabled keyboard haptic feedback / vibration settings overlay.
 * **`device_xiaomi_sm8350-common`**:
   * **Deep Sleep & Idle Timers**: Increased `vm.stat_interval` to 10s, reducing idle CPU timer wakeups by 90% during screen-off.
+  * **VFS Inode/Dentry Cache**: Tuned `vm.vfs_cache_pressure` to 60 to retain file structure and directory trees in RAM longer for instantaneous app and gallery launches.
+  * **Outdoor Wi-Fi Power Saving**: Increased disconnected PNO scan intervals (moving: 60s, stationary: 120s) and screen-on intervals (30/60/120/240s) in `WifiOverlaySM8350` to prevent rapid battery drain when away from saved networks.
   * **UFS Storage Optimization**: Set multi-queue I/O scheduler to `none` (direct hardware queue bypass) and tuned `read_ahead_kb` to 128 KB for optimal random 4K read performance without read amplification.
   * **Smooth UI & Jitter Reduction**: Tuned `schedutil` down-rate limits (20ms silver, 10ms gold/prime) to eliminate DVFS frequency jitter across 90Hz frame bounds.
   * **App Compilation & RAM**: Disabled `dalvik.vm.minidebuginfo` and `dex2oat-minidebuginfo` to eliminate GDB unwind tables from compiled apps, saving disk space and memory footprint.

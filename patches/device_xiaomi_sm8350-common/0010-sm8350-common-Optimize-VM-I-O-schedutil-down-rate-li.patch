@@ -1,7 +1,7 @@
 From 4e4bec8b17c0403675f8be3298e06b6f721ba3aa Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Mon, 21 Sep 2026 14:48:36 +0300
-Subject: [PATCH 10/10] sm8350-common: Optimize VM, I/O, schedutil down-rate
+Subject: [PATCH 10/11] sm8350-common: Optimize VM, I/O, schedutil down-rate
  limits, and Wi-Fi logging
 
 - Set vm.stat_interval to 10s to reduce idle CPU timer wakeups
