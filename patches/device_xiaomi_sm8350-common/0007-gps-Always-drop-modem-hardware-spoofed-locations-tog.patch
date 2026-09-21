@@ -1,7 +1,7 @@
 From 6718347e6254a162db27464df84f37683f591295 Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Sun, 20 Sep 2026 00:05:59 +0300
-Subject: [PATCH 7/8] gps: Always drop modem hardware spoofed locations, toggle
+Subject: [PATCH 7/9] gps: Always drop modem hardware spoofed locations, toggle
  heuristic EW filter
 
 Change-Id: I15eee1eb45dab67a7f446ce51d334392e4dfaa94

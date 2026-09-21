@@ -1,7 +1,7 @@
 From e09f9264a6837312ea64fda1a1332a08334bafc2 Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Sun, 20 Sep 2026 03:02:24 +0300
-Subject: [PATCH 7/7] ARM: dts: yupik-gpu: Tune GPU frequencies and voltages
+Subject: [PATCH 7/8] ARM: dts: yupik-gpu: Tune GPU frequencies and voltages
  for speed-bin 117
 
 Update speed-bin 117 power levels with proven 180-563 MHz profile:

@@ -1,7 +1,7 @@
 From 81a6c871d925ae9cd0739c56bb053e8abace993b Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Sat, 19 Sep 2026 23:38:51 +0300
-Subject: [PATCH 6/8] gps: Filter out Lima EW replay spoofing (time,
+Subject: [PATCH 6/9] gps: Filter out Lima EW replay spoofing (time,
  coordinates, and flight profile)
 
 Change-Id: Idb077866942cc4ba250b8752378894eb512fcddc

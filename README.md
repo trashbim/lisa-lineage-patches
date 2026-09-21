@@ -24,7 +24,7 @@ Custom optimizations, hardware tweaks, and EW (electronic warfare) anti-spoofing
 * **Touch Stalls**: Removed Goodix panel detection stall during boot.
 * **TCP BBR**: Enabled Google BBR congestion control algorithm as default for faster network throughput.
 * **ZRAM**: Switched default compression algorithm to `zstd` for better performance and compression ratio.
-* **Kernel Debugging**: Disabled `PAGE_OWNER` debugging overhead.
+* **Kernel Debugging Overhead**: Disabled `PAGE_OWNER`, `CORESIGHT` hardware trace subsystem, `SCHEDSTATS` scheduler accounting hooks, `DEBUG_STACK_USAGE`, `QCOM_KGSL_CONTEXT_DEBUG`, and EDL download mode panic stall (ensuring clean reboots).
 
 ### 3. System & UI Tweaks
 * **`frameworks_base`**:
@@ -38,6 +38,7 @@ Custom optimizations, hardware tweaks, and EW (electronic warfare) anti-spoofing
   * Disabled SurfaceFlinger background blur for maximum fluidity and lower GPU power draw.
   * Supported 3 haptic vibration intensity levels.
   * Configured ZRAM disk size to 80% of physical RAM (~4.9 GB on 6GB model, ~6.5 GB on 8GB model) paired with kernel `zstd` compression for superior app retention.
+  * Disabled subsystem crash ramdumps (`persist.vendor.ssr.enable_ramdumps=0`) and background modem diagnostic logging.
 
 ---
 
