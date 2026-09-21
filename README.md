@@ -24,7 +24,7 @@ Custom optimizations, hardware tweaks, and EW (electronic warfare) anti-spoofing
 * **Touch Stalls**: Removed Goodix panel detection stall during boot.
 * **TCP BBR**: Enabled Google BBR congestion control algorithm as default for faster network throughput.
 * **ZRAM**: Switched default compression algorithm to `zstd` for better performance and compression ratio.
-* **Kernel Debugging Overhead**: Disabled `PAGE_OWNER`, `CORESIGHT` hardware trace subsystem, `SCHEDSTATS` scheduler accounting hooks, `DEBUG_STACK_USAGE`, `QCOM_KGSL_CONTEXT_DEBUG`, and EDL download mode panic stall (ensuring clean reboots).
+* **Kernel Debugging Overhead**: Disabled `PAGE_OWNER`, `CORESIGHT` hardware trace subsystem, `SCHEDSTATS` scheduler accounting hooks, `DEBUG_STACK_USAGE`, `QCOM_KGSL_CONTEXT_DEBUG`, EDL download mode panic stall, and `CONFIG_KALLSYMS_ALL` (freeing ~2 MB of permanent kernel wired RAM).
 
 ### 3. System & UI Tweaks
 * **`frameworks_base`**:
@@ -34,6 +34,11 @@ Custom optimizations, hardware tweaks, and EW (electronic warfare) anti-spoofing
   * Set default display refresh rate to 90Hz.
   * Enabled keyboard haptic feedback / vibration settings overlay.
 * **`device_xiaomi_sm8350-common`**:
+  * **Deep Sleep & Idle Timers**: Increased `vm.stat_interval` to 10s, reducing idle CPU timer wakeups by 90% during screen-off.
+  * **UFS Storage Optimization**: Set multi-queue I/O scheduler to `none` (direct hardware queue bypass) and tuned `read_ahead_kb` to 128 KB for optimal random 4K read performance without read amplification.
+  * **Smooth UI & Jitter Reduction**: Tuned `schedutil` down-rate limits (20ms silver, 10ms gold/prime) to eliminate DVFS frequency jitter across 90Hz frame bounds.
+  * **App Compilation & RAM**: Disabled `dalvik.vm.minidebuginfo` and `dex2oat-minidebuginfo` to eliminate GDB unwind tables from compiled apps, saving disk space and memory footprint.
+  * **Wi-Fi Diagnostics**: Disabled firmware log polling (`gEnablefwlog=0`) in `WCNSS_qcom_cfg.ini`.
   * Set 18 media volume steps for finer volume adjustment.
   * Disabled SurfaceFlinger background blur for maximum fluidity and lower GPU power draw.
   * Supported 3 haptic vibration intensity levels.
