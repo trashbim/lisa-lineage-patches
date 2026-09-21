@@ -24,7 +24,7 @@ Custom optimizations, hardware tweaks, and EW (electronic warfare) anti-spoofing
 * **Touch Stalls**: Removed Goodix panel detection stall during boot.
 * **TCP BBR**: Enabled Google BBR congestion control algorithm as default for faster network throughput.
 * **ZRAM**: Switched default compression algorithm to `zstd` for better performance and compression ratio.
-* **Kernel Debugging Overhead**: Disabled `PAGE_OWNER`, `CORESIGHT` hardware trace subsystem, `SCHEDSTATS` scheduler accounting hooks, `DEBUG_STACK_USAGE`, `QCOM_KGSL_CONTEXT_DEBUG`, EDL download mode panic stall, and `CONFIG_KALLSYMS_ALL` (freeing ~2 MB of permanent kernel wired RAM).
+* **Kernel Debugging**: Disabled `PAGE_OWNER` debugging overhead.
 
 ### 3. System & UI Tweaks
 * **`frameworks_base`**:
