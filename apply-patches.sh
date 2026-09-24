@@ -25,6 +25,7 @@ PROJECTS=(
     "frameworks/base:frameworks_base"
     "kernel/xiaomi/sm8350:kernel_xiaomi_sm8350"
     "packages/apps/Settings:packages_apps_Settings"
+    "vendor/lineage:vendor_lineage"
 )
 
 apply_patches() {

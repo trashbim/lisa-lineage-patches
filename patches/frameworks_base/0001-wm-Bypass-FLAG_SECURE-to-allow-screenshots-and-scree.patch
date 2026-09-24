@@ -1,4 +1,4 @@
-From b597b187cffdcb1c6962b26fe32f341fcd5c3e53 Mon Sep 17 00:00:00 2001
+From 78e692f954adc1d8d44eb31fe17d68581afcce8f Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Fri, 18 Sep 2026 23:10:03 +0300
 Subject: [PATCH] wm: Bypass FLAG_SECURE to allow screenshots and screen
@@ -16,10 +16,10 @@ Change-Id: I2a559f6ba9c6bdbe4ed7c867861fa41c5c3d2a0f
  3 files changed, 3 insertions(+), 20 deletions(-)
 
 diff --git a/services/core/java/com/android/server/wm/Task.java b/services/core/java/com/android/server/wm/Task.java
-index b5698711e..c8e964c98 100644
+index fd8345e36..64f882e33 100644
 --- a/services/core/java/com/android/server/wm/Task.java
 +++ b/services/core/java/com/android/server/wm/Task.java
-@@ -7061,10 +7061,7 @@ class Task extends TaskFragment {
+@@ -7085,10 +7085,7 @@ class Task extends TaskFragment {
      }
  
      boolean isSecure() {

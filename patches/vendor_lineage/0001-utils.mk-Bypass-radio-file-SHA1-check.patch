@@ -1,0 +1,27 @@
+From 790b4459dfd2287f2f4d72ccbf8a9f5c4b71d562 Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Thu, 24 Sep 2026 21:34:27 +0300
+Subject: [PATCH] utils.mk: Bypass radio file SHA1 check
+
+Change-Id: I91acf260654c88cf7c7e9e2ae0592c034d6b2d10
+---
+ build/core/utils.mk | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+diff --git a/build/core/utils.mk b/build/core/utils.mk
+index 6b5a9e2..64dbd8a 100644
+--- a/build/core/utils.mk
++++ b/build/core/utils.mk
+@@ -235,8 +235,5 @@ endef
+ # $(call add-radio-file-sha1-checked,path,sha1)
+ define add-radio-file-sha1-checked
+   $(eval path := $(LOCAL_PATH)/$(1))
+-  $(eval sha1 := $(shell sha1sum "$(path)" | cut -d" " -f 1))
+-  $(if $(filter $(sha1),$(2)),
+-    $(call add-radio-file,$(1)),
+-    $(error $(path) SHA1 mismatch ($(sha1) != $(2))))
++  $(call add-radio-file,$(1))
+ endef
+-- 
+2.55.0
+

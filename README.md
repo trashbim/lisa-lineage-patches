@@ -46,6 +46,8 @@ Custom optimizations, hardware tweaks, and EW (electronic warfare) anti-spoofing
   * Supported 3 haptic vibration intensity levels.
   * Configured ZRAM disk size to 80% of physical RAM (~4.9 GB on 6GB model, ~6.5 GB on 8GB model) paired with kernel `zstd` compression for superior app retention.
   * Disabled subsystem crash ramdumps (`persist.vendor.ssr.enable_ramdumps=0`) and background modem diagnostic logging.
+* **`vendor_lineage`**:
+  * Bypass radio/firmware file SHA1 verification in `build/core/utils.mk` to allow custom radio blobs without build breakage.
 
 ---
 
