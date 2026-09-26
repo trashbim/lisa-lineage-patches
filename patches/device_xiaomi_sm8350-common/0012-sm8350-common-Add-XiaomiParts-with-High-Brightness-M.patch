@@ -1,7 +1,7 @@
 From e060a41d748b7c247af5cffb20e77eae49e22a68 Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Sun, 27 Sep 2026 00:33:20 +0300
-Subject: [PATCH 12/12] sm8350-common: Add XiaomiParts with High Brightness
+Subject: [PATCH 12/13] sm8350-common: Add XiaomiParts with High Brightness
  Mode and Bypass Charging
 
 Change-Id: I65b02d2ff63648db7255248c1a87225d8d58e097

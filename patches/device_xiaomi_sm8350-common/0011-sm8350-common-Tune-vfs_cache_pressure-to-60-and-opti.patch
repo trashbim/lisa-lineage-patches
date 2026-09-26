@@ -1,7 +1,7 @@
 From 340bcee67714a6483835f426c1caf19f428b57ea Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Mon, 21 Sep 2026 15:11:27 +0300
-Subject: [PATCH 11/12] sm8350-common: Tune vfs_cache_pressure to 60 and
+Subject: [PATCH 11/13] sm8350-common: Tune vfs_cache_pressure to 60 and
  optimize disconnected Wi-Fi scanning
 
 - Set vm.vfs_cache_pressure to 60 to keep directory and inode dentry caches longer in RAM for faster app switching and file navigation

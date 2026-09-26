@@ -1,0 +1,101 @@
+From 0c0cb364602b07b38f963b008b0f962b62b17005 Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Sun, 27 Sep 2026 00:55:30 +0300
+Subject: [PATCH 13/13] sm8350-common: Optimize scheduler, input boost, uclamp
+ and add Traceur
+
+Change-Id: Id6bee99ec6946d56b7eff4dd8097c672e7b359c0
+---
+ common.mk                                  |  5 +++++
+ configs/task_profiles.json                 |  8 ++++++++
+ rootdir/bin/init.kernel.post_boot-yupik.sh | 14 +++++++-------
+ rootdir/etc/init.qti.kernel.rc             |  2 ++
+ 4 files changed, 22 insertions(+), 7 deletions(-)
+
+diff --git a/common.mk b/common.mk
+index bc6ec9e..984d11e 100644
+--- a/common.mk
++++ b/common.mk
+@@ -509,3 +509,8 @@ PRODUCT_PACKAGES += \
+ # XiaomiParts
+ PRODUCT_PACKAGES += \
+     XiaomiParts
++
++# Traceur (System Tracing)
++PRODUCT_PACKAGES += \
++    Traceur
++
+diff --git a/configs/task_profiles.json b/configs/task_profiles.json
+index 2ef1e6c..d0dbec3 100644
+--- a/configs/task_profiles.json
++++ b/configs/task_profiles.json
+@@ -98,6 +98,14 @@
+             "Controller": "cpu",
+             "Path": "top-app"
+           }
++        },
++        {
++          "Name": "SetAttribute",
++          "Params":
++          {
++            "Name": "UClampMin",
++            "Value": "20"
++          }
+         }
+       ]
+     },
+diff --git a/rootdir/bin/init.kernel.post_boot-yupik.sh b/rootdir/bin/init.kernel.post_boot-yupik.sh
+index 7a350e4..548bf60 100755
+--- a/rootdir/bin/init.kernel.post_boot-yupik.sh
++++ b/rootdir/bin/init.kernel.post_boot-yupik.sh
+@@ -183,7 +183,7 @@ echo 691200 > /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
+ echo 0 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/pl
+ 
+ # configure input boost settings
+-echo "0:1324800" > /sys/devices/system/cpu/cpu_boost/input_boost_freq
++echo "0:1324800 4:1344000 7:1344000" > /sys/devices/system/cpu/cpu_boost/input_boost_freq
+ echo 120 > /sys/devices/system/cpu/cpu_boost/input_boost_ms
+ 
+ # configure governor settings for gold cluster
+@@ -192,10 +192,10 @@ echo 10000 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/down_rate_limit_u
+ echo 0 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/up_rate_limit_us
+ echo 1228800 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/hispeed_freq
+ echo 691200 > /sys/devices/system/cpu/cpufreq/policy4/scaling_min_freq
+-echo 85 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/hispeed_load
+-echo -6 > /sys/devices/system/cpu/cpu4/sched_load_boost
+-echo -6 > /sys/devices/system/cpu/cpu5/sched_load_boost
+-echo -6 > /sys/devices/system/cpu/cpu6/sched_load_boost
++echo 80 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/hispeed_load
++echo 0 > /sys/devices/system/cpu/cpu4/sched_load_boost
++echo 0 > /sys/devices/system/cpu/cpu5/sched_load_boost
++echo 0 > /sys/devices/system/cpu/cpu6/sched_load_boost
+ echo 0 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/rtg_boost_freq
+ echo 0 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/pl
+ 
+@@ -205,8 +205,8 @@ echo 10000 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/down_rate_limit_u
+ echo 0 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/up_rate_limit_us
+ echo 1324800 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/hispeed_freq
+ echo 806400 > /sys/devices/system/cpu/cpufreq/policy7/scaling_min_freq
+-echo 85 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/hispeed_load
+-echo -6 > /sys/devices/system/cpu/cpu7/sched_load_boost
++echo 80 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/hispeed_load
++echo 0 > /sys/devices/system/cpu/cpu7/sched_load_boost
+ echo 0 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/rtg_boost_freq
+ echo 0 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/pl
+ 
+diff --git a/rootdir/etc/init.qti.kernel.rc b/rootdir/etc/init.qti.kernel.rc
+index debd98d..47ae5de 100644
+--- a/rootdir/etc/init.qti.kernel.rc
++++ b/rootdir/etc/init.qti.kernel.rc
+@@ -40,6 +40,8 @@ on init
+     write /dev/cpuctl/background/cpu.uclamp.colocate 0
+     write /dev/cpuctl/foreground/cpu.uclamp.colocate 0
+     write /dev/cpuctl/top-app/cpu.uclamp.colocate 1
++    write /dev/cpuctl/foreground/cpu.uclamp.min 5
++    write /dev/cpuctl/top-app/cpu.uclamp.min 20
+ 
+ on early-boot
+     # Allow subsystem (modem etc) debugging
+-- 
+2.55.0
+
