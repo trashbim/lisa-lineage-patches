@@ -1,0 +1,533 @@
+From 649bfb8b5af43e64c039ffbbc8602f2a2b0d1404 Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Sun, 27 Sep 2026 02:07:17 +0300
+Subject: [PATCH] parts: Remove HBM and retain only Bypass Charging
+
+Change-Id: If2ed8e43ee062b5736b230200594e465077ac702
+---
+ parts/AndroidManifest.xml                     |  20 ----
+ parts/res/drawable/ic_hbm_tile.xml            |  10 --
+ parts/res/values-ru/strings.xml               |   8 +-
+ parts/res/values-uk/strings.xml               |   8 +-
+ parts/res/values/strings.xml                  |   8 +-
+ parts/res/xml/parts_preferences.xml           |  13 ---
+ .../device/BootCompletedReceiver.java         |   2 -
+ .../settings/device/PartsFragment.java        |  32 +-----
+ .../settings/device/hbm/HbmController.java    | 104 ------------------
+ .../device/hbm/HbmMonitorService.java         |  58 ----------
+ .../settings/device/hbm/HbmTileService.java   |  62 -----------
+ sepolicy/vendor/system_app.te                 |   5 -
+ 12 files changed, 6 insertions(+), 324 deletions(-)
+ delete mode 100644 parts/res/drawable/ic_hbm_tile.xml
+ delete mode 100644 parts/src/org/lineageos/settings/device/hbm/HbmController.java
+ delete mode 100644 parts/src/org/lineageos/settings/device/hbm/HbmMonitorService.java
+ delete mode 100644 parts/src/org/lineageos/settings/device/hbm/HbmTileService.java
+
+diff --git a/parts/AndroidManifest.xml b/parts/AndroidManifest.xml
+index bfa74ab..7ac0316 100644
+--- a/parts/AndroidManifest.xml
++++ b/parts/AndroidManifest.xml
+@@ -11,8 +11,6 @@
+ 
+     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+     <uses-permission android:name="android.permission.WAKE_LOCK" />
+-    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
+-    <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS" />
+ 
+     <application
+         android:label="@string/parts_title"
+@@ -48,20 +46,6 @@
+         </activity>
+ 
+         <!-- Quick Settings Tiles -->
+-        <service
+-            android:name=".hbm.HbmTileService"
+-            android:icon="@drawable/ic_hbm_tile"
+-            android:label="@string/hbm_tile_title"
+-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+-            android:exported="true">
+-            <intent-filter>
+-                <action android:name="android.service.quicksettings.action.QS_TILE" />
+-            </intent-filter>
+-            <meta-data
+-                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+-                android:value="true" />
+-        </service>
+-
+         <service
+             android:name=".battery.BypassChargingTileService"
+             android:icon="@drawable/ic_bypass_charging_tile"
+@@ -77,10 +61,6 @@
+         </service>
+ 
+         <!-- Background Monitor Services for Safety Guards -->
+-        <service
+-            android:name=".hbm.HbmMonitorService"
+-            android:exported="false" />
+-
+         <service
+             android:name=".battery.BypassChargingMonitorService"
+             android:exported="false" />
+diff --git a/parts/res/drawable/ic_hbm_tile.xml b/parts/res/drawable/ic_hbm_tile.xml
+deleted file mode 100644
+index 328c03b..0000000
+--- a/parts/res/drawable/ic_hbm_tile.xml
++++ /dev/null
+@@ -1,10 +0,0 @@
+-<vector xmlns:android="http://schemas.android.com/apk/res/android"
+-    android:width="24dp"
+-    android:height="24dp"
+-    android:viewportWidth="24"
+-    android:viewportHeight="24"
+-    android:tint="?android:attr/colorControlNormal">
+-    <path
+-        android:fillColor="#FFFFFFFF"
+-        android:pathData="M20,8.69V4h-4.69L12,0.69 8.69,4H4v4.69L0.69,12 4,15.31V20h4.69L12,23.31 15.31,20H20v-4.69L23.31,12 20,8.69zM12,18c-3.31,0 -6,-2.69 -6,-6s2.69,-6 6,-6 6,2.69 6,6 -2.69,6 -6,6zm0,-10c-2.21,0 -4,1.79 -4,4s1.79,4 4,4 4,-1.79 4,-4 -1.79,-4 -4,-4z" />
+-</vector>
+diff --git a/parts/res/values-ru/strings.xml b/parts/res/values-ru/strings.xml
+index f7464d1..94fbfe2 100644
+--- a/parts/res/values-ru/strings.xml
++++ b/parts/res/values-ru/strings.xml
+@@ -6,17 +6,11 @@
+ <resources>
+     <!-- Main -->
+     <string name="parts_title">Настройки Xiaomi</string>
+-    <string name="parts_summary">Дополнительные функции устройства, экран и питание</string>
++    <string name="parts_summary">Дополнительные функции устройства и питания</string>
+ 
+     <!-- Categories -->
+-    <string name="category_display">Экран</string>
+     <string name="category_battery">Батарея</string>
+ 
+-    <!-- High Brightness Mode (HBM) -->
+-    <string name="hbm_title">Яркий режим (HBM)</string>
+-    <string name="hbm_summary">Увеличивает яркость экрана до 1000 нит для отличной видимости на ярком солнце. Автоматически отключается при выключении экрана.</string>
+-    <string name="hbm_tile_title">Яркий режим</string>
+-
+     <!-- Bypass Charging -->
+     <string name="bypass_charging_title">Сквозная зарядка</string>
+     <string name="bypass_charging_summary">Питание устройства напрямую от сети без зарядки аккумулятора. Снижает нагрев и износ батареи в играх и навигации. Автоматически отключается при отключении кабеля.</string>
+diff --git a/parts/res/values-uk/strings.xml b/parts/res/values-uk/strings.xml
+index d0e2d0b..6b693f9 100644
+--- a/parts/res/values-uk/strings.xml
++++ b/parts/res/values-uk/strings.xml
+@@ -6,17 +6,11 @@
+ <resources>
+     <!-- Main -->
+     <string name="parts_title">Налаштування Xiaomi</string>
+-    <string name="parts_summary">Додаткові функції пристрою, екран та живлення</string>
++    <string name="parts_summary">Додаткові функції пристрою та живлення</string>
+ 
+     <!-- Categories -->
+-    <string name="category_display">Екран</string>
+     <string name="category_battery">Батарея</string>
+ 
+-    <!-- High Brightness Mode (HBM) -->
+-    <string name="hbm_title">Яскравий режим (HBM)</string>
+-    <string name="hbm_summary">Збільшує яскравість екрана до 1000 ніт для чудової видимості на яскравому сонці. Автоматично вимикається при вимкненні екрана.</string>
+-    <string name="hbm_tile_title">Яскравий режим</string>
+-
+     <!-- Bypass Charging -->
+     <string name="bypass_charging_title">Наскрізне живлення</string>
+     <string name="bypass_charging_summary">Живлення пристрою безпосередньо від мережі без заряджання акумулятора. Знижує нагрівання та знос батареї в іграх і навігації. Автоматично вимикається при від\'єднанні кабелю.</string>
+diff --git a/parts/res/values/strings.xml b/parts/res/values/strings.xml
+index 2b82000..8dd4b6f 100644
+--- a/parts/res/values/strings.xml
++++ b/parts/res/values/strings.xml
+@@ -6,17 +6,11 @@
+ <resources>
+     <!-- Main -->
+     <string name="parts_title">Xiaomi Parts</string>
+-    <string name="parts_summary">Additional device features, display and battery</string>
++    <string name="parts_summary">Additional device features and battery settings</string>
+ 
+     <!-- Categories -->
+-    <string name="category_display">Display</string>
+     <string name="category_battery">Battery</string>
+ 
+-    <!-- High Brightness Mode (HBM) -->
+-    <string name="hbm_title">High Brightness Mode</string>
+-    <string name="hbm_summary">Boost display brightness up to 1000 nits for direct sunlight. Automatically turns off when the screen is turned off.</string>
+-    <string name="hbm_tile_title">High Brightness</string>
+-
+     <!-- Bypass Charging -->
+     <string name="bypass_charging_title">Bypass Charging</string>
+     <string name="bypass_charging_summary">Power the device directly from the charger without charging the battery. Reduces heat during gaming and navigation. Automatically resets when disconnected.</string>
+diff --git a/parts/res/xml/parts_preferences.xml b/parts/res/xml/parts_preferences.xml
+index 0ab7f12..e673b79 100644
+--- a/parts/res/xml/parts_preferences.xml
++++ b/parts/res/xml/parts_preferences.xml
+@@ -6,19 +6,6 @@
+ <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+     xmlns:app="http://schemas.android.com/apk/res-auto">
+ 
+-    <PreferenceCategory
+-        android:key="category_display"
+-        android:title="@string/category_display">
+-
+-        <SwitchPreferenceCompat
+-            android:key="pref_hbm"
+-            android:title="@string/hbm_title"
+-            android:summary="@string/hbm_summary"
+-            android:icon="@drawable/ic_hbm_tile"
+-            android:defaultValue="false" />
+-
+-    </PreferenceCategory>
+-
+     <PreferenceCategory
+         android:key="category_battery"
+         android:title="@string/category_battery">
+diff --git a/parts/src/org/lineageos/settings/device/BootCompletedReceiver.java b/parts/src/org/lineageos/settings/device/BootCompletedReceiver.java
+index e7211f9..cd5c346 100644
+--- a/parts/src/org/lineageos/settings/device/BootCompletedReceiver.java
++++ b/parts/src/org/lineageos/settings/device/BootCompletedReceiver.java
+@@ -14,7 +14,6 @@ import android.util.Log;
+ import androidx.preference.PreferenceManager;
+ 
+ import org.lineageos.settings.device.battery.BypassChargingController;
+-import org.lineageos.settings.device.hbm.HbmController;
+ 
+ public class BootCompletedReceiver extends BroadcastReceiver {
+     private static final String TAG = "XiaomiParts-Boot";
+@@ -33,7 +32,6 @@ public class BootCompletedReceiver extends BroadcastReceiver {
+         // Reset saved states in preferences
+         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+         prefs.edit()
+-                .putBoolean(HbmController.PREF_HBM, false)
+                 .putBoolean(BypassChargingController.PREF_BYPASS_CHARGING, false)
+                 .apply();
+     }
+diff --git a/parts/src/org/lineageos/settings/device/PartsFragment.java b/parts/src/org/lineageos/settings/device/PartsFragment.java
+index 117d9d7..3af4429 100644
+--- a/parts/src/org/lineageos/settings/device/PartsFragment.java
++++ b/parts/src/org/lineageos/settings/device/PartsFragment.java
+@@ -19,22 +19,17 @@ import androidx.preference.SwitchPreferenceCompat;
+ import com.android.settingslib.widget.SettingsBasePreferenceFragment;
+ 
+ import org.lineageos.settings.device.battery.BypassChargingController;
+-import org.lineageos.settings.device.hbm.HbmController;
+ 
+ public class PartsFragment extends SettingsBasePreferenceFragment
+         implements Preference.OnPreferenceChangeListener {
+ 
+-    private SwitchPreferenceCompat mHbmPreference;
+     private SwitchPreferenceCompat mBypassChargingPreference;
+ 
+     private final BroadcastReceiver mStateReceiver = new BroadcastReceiver() {
+         @Override
+         public void onReceive(Context context, Intent intent) {
+             String action = intent.getAction();
+-            if (HbmController.ACTION_HBM_CHANGED.equals(action) && mHbmPreference != null) {
+-                boolean state = intent.getBooleanExtra(HbmController.EXTRA_HBM_STATE, false);
+-                mHbmPreference.setChecked(state);
+-            } else if (BypassChargingController.ACTION_BYPASS_CHARGING_CHANGED.equals(action)
++            if (BypassChargingController.ACTION_BYPASS_CHARGING_CHANGED.equals(action)
+                     && mBypassChargingPreference != null) {
+                 boolean state = intent.getBooleanExtra(
+                         BypassChargingController.EXTRA_BYPASS_CHARGING_STATE, false);
+@@ -47,19 +42,6 @@ public class PartsFragment extends SettingsBasePreferenceFragment
+     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+         setPreferencesFromResource(R.xml.parts_preferences, rootKey);
+ 
+-        mHbmPreference = findPreference(HbmController.PREF_HBM);
+-        if (mHbmPreference != null) {
+-            if (!HbmController.isSupported()) {
+-                PreferenceCategory displayCat = findPreference("category_display");
+-                if (displayCat != null) {
+-                    getPreferenceScreen().removePreference(displayCat);
+-                }
+-            } else {
+-                mHbmPreference.setChecked(HbmController.isEnabled(getContext()));
+-                mHbmPreference.setOnPreferenceChangeListener(this);
+-            }
+-        }
+-
+         mBypassChargingPreference = findPreference(BypassChargingController.PREF_BYPASS_CHARGING);
+         if (mBypassChargingPreference != null) {
+             if (!BypassChargingController.isSupported()) {
+@@ -78,14 +60,9 @@ public class PartsFragment extends SettingsBasePreferenceFragment
+     @Override
+     public void onStart() {
+         super.onStart();
+-        IntentFilter filter = new IntentFilter();
+-        filter.addAction(HbmController.ACTION_HBM_CHANGED);
+-        filter.addAction(BypassChargingController.ACTION_BYPASS_CHARGING_CHANGED);
++        IntentFilter filter = new IntentFilter(BypassChargingController.ACTION_BYPASS_CHARGING_CHANGED);
+         requireContext().registerReceiver(mStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+ 
+-        if (mHbmPreference != null && HbmController.isSupported()) {
+-            mHbmPreference.setChecked(HbmController.isEnabled(getContext()));
+-        }
+         if (mBypassChargingPreference != null && BypassChargingController.isSupported()) {
+             mBypassChargingPreference.setChecked(BypassChargingController.isEnabled(getContext()));
+         }
+@@ -108,10 +85,7 @@ public class PartsFragment extends SettingsBasePreferenceFragment
+         }
+ 
+         boolean enabled = (Boolean) newValue;
+-        if (preference == mHbmPreference) {
+-            HbmController.setEnabled(context, enabled);
+-            return true;
+-        } else if (preference == mBypassChargingPreference) {
++        if (preference == mBypassChargingPreference) {
+             if (enabled && !BypassChargingController.isPowerConnected(context)) {
+                 Toast.makeText(context, R.string.bypass_charging_connect_charger_toast,
+                         Toast.LENGTH_SHORT).show();
+diff --git a/parts/src/org/lineageos/settings/device/hbm/HbmController.java b/parts/src/org/lineageos/settings/device/hbm/HbmController.java
+deleted file mode 100644
+index e7af964..0000000
+--- a/parts/src/org/lineageos/settings/device/hbm/HbmController.java
++++ /dev/null
+@@ -1,104 +0,0 @@
+-/*
+- * SPDX-FileCopyrightText: The LineageOS Project
+- * SPDX-License-Identifier: Apache-2.0
+- */
+-
+-package org.lineageos.settings.device.hbm;
+-
+-import android.content.ContentResolver;
+-import android.content.Context;
+-import android.content.Intent;
+-import android.content.SharedPreferences;
+-import android.provider.Settings;
+-import android.util.Log;
+-
+-import androidx.preference.PreferenceManager;
+-
+-import org.lineageos.settings.device.FileUtils;
+-
+-public final class HbmController {
+-    public static final String TAG = "HbmController";
+-    public static final String NODE_BACKLIGHT = "/sys/class/backlight/panel0-backlight/brightness";
+-    public static final String PREF_HBM = "pref_hbm";
+-    public static final String PREF_SAVED_BRIGHTNESS = "pref_saved_brightness";
+-    public static final String PREF_SAVED_BRIGHTNESS_MODE = "pref_saved_brightness_mode";
+-    public static final String ACTION_HBM_CHANGED = "org.lineageos.settings.device.ACTION_HBM_CHANGED";
+-    public static final String EXTRA_HBM_STATE = "extra_hbm_state";
+-
+-    private HbmController() {
+-    }
+-
+-    public static boolean isSupported() {
+-        return true;
+-    }
+-
+-    public static boolean isEnabled(Context context) {
+-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+-        return prefs.getBoolean(PREF_HBM, false);
+-    }
+-
+-    public static void setEnabled(Context context, boolean enable) {
+-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+-        boolean current = prefs.getBoolean(PREF_HBM, false);
+-        if (current == enable) {
+-            return;
+-        }
+-
+-        ContentResolver resolver = context.getContentResolver();
+-
+-        if (enable) {
+-            int currentBrightness = Settings.System.getInt(resolver, Settings.System.SCREEN_BRIGHTNESS, 128);
+-            int currentMode = Settings.System.getInt(resolver, Settings.System.SCREEN_BRIGHTNESS_MODE,
+-                    Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+-
+-            prefs.edit()
+-                    .putBoolean(PREF_HBM, true)
+-                    .putInt(PREF_SAVED_BRIGHTNESS, currentBrightness)
+-                    .putInt(PREF_SAVED_BRIGHTNESS_MODE, currentMode)
+-                    .apply();
+-
+-            try {
+-                Settings.System.putInt(resolver, Settings.System.SCREEN_BRIGHTNESS_MODE,
+-                        Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+-                Settings.System.putInt(resolver, Settings.System.SCREEN_BRIGHTNESS, 255);
+-            } catch (Exception e) {
+-                Log.e(TAG, "Failed to set system brightness", e);
+-            }
+-
+-            // Write max 4095 (1000 nits hardware command 51 0F FF)
+-            FileUtils.writeLine(NODE_BACKLIGHT, "4095");
+-
+-            try {
+-                Intent serviceIntent = new Intent(context, HbmMonitorService.class);
+-                context.startService(serviceIntent);
+-            } catch (Exception e) {
+-                Log.e(TAG, "Failed to start HbmMonitorService", e);
+-            }
+-        } else {
+-            int savedBrightness = prefs.getInt(PREF_SAVED_BRIGHTNESS, 128);
+-            int savedMode = prefs.getInt(PREF_SAVED_BRIGHTNESS_MODE, Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL);
+-
+-            prefs.edit().putBoolean(PREF_HBM, false).apply();
+-
+-            try {
+-                Settings.System.putInt(resolver, Settings.System.SCREEN_BRIGHTNESS, savedBrightness);
+-                Settings.System.putInt(resolver, Settings.System.SCREEN_BRIGHTNESS_MODE, savedMode);
+-            } catch (Exception e) {
+-                Log.e(TAG, "Failed to restore system brightness", e);
+-            }
+-
+-            try {
+-                Intent serviceIntent = new Intent(context, HbmMonitorService.class);
+-                context.stopService(serviceIntent);
+-            } catch (Exception e) {
+-                Log.e(TAG, "Failed to stop HbmMonitorService", e);
+-            }
+-        }
+-
+-        Intent broadcast = new Intent(ACTION_HBM_CHANGED);
+-        broadcast.putExtra(EXTRA_HBM_STATE, enable);
+-        broadcast.setPackage(context.getPackageName());
+-        context.sendBroadcast(broadcast);
+-        Log.d(TAG, "HBM state set to " + enable);
+-    }
+-}
+diff --git a/parts/src/org/lineageos/settings/device/hbm/HbmMonitorService.java b/parts/src/org/lineageos/settings/device/hbm/HbmMonitorService.java
+deleted file mode 100644
+index 053f955..0000000
+--- a/parts/src/org/lineageos/settings/device/hbm/HbmMonitorService.java
++++ /dev/null
+@@ -1,58 +0,0 @@
+-/*
+- * SPDX-FileCopyrightText: The LineageOS Project
+- * SPDX-License-Identifier: Apache-2.0
+- */
+-
+-package org.lineageos.settings.device.hbm;
+-
+-import android.app.Service;
+-import android.content.BroadcastReceiver;
+-import android.content.Context;
+-import android.content.Intent;
+-import android.content.IntentFilter;
+-import android.os.IBinder;
+-import android.util.Log;
+-
+-public class HbmMonitorService extends Service {
+-    private static final String TAG = "HbmMonitorService";
+-
+-    private final BroadcastReceiver mScreenStateReceiver = new BroadcastReceiver() {
+-        @Override
+-        public void onReceive(Context context, Intent intent) {
+-            if (Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
+-                Log.d(TAG, "Screen off detected, auto-disabling HBM for panel safety");
+-                HbmController.setEnabled(context, false);
+-                stopSelf();
+-            }
+-        }
+-    };
+-
+-    @Override
+-    public void onCreate() {
+-        super.onCreate();
+-        IntentFilter filter = new IntentFilter();
+-        filter.addAction(Intent.ACTION_SCREEN_OFF);
+-        registerReceiver(mScreenStateReceiver, filter);
+-        Log.d(TAG, "HbmMonitorService started");
+-    }
+-
+-    @Override
+-    public int onStartCommand(Intent intent, int flags, int startId) {
+-        return START_STICKY;
+-    }
+-
+-    @Override
+-    public void onDestroy() {
+-        try {
+-            unregisterReceiver(mScreenStateReceiver);
+-        } catch (IllegalArgumentException ignored) {
+-        }
+-        Log.d(TAG, "HbmMonitorService stopped");
+-        super.onDestroy();
+-    }
+-
+-    @Override
+-    public IBinder onBind(Intent intent) {
+-        return null;
+-    }
+-}
+diff --git a/parts/src/org/lineageos/settings/device/hbm/HbmTileService.java b/parts/src/org/lineageos/settings/device/hbm/HbmTileService.java
+deleted file mode 100644
+index 328fc64..0000000
+--- a/parts/src/org/lineageos/settings/device/hbm/HbmTileService.java
++++ /dev/null
+@@ -1,62 +0,0 @@
+-/*
+- * SPDX-FileCopyrightText: The LineageOS Project
+- * SPDX-License-Identifier: Apache-2.0
+- */
+-
+-package org.lineageos.settings.device.hbm;
+-
+-import android.content.BroadcastReceiver;
+-import android.content.Context;
+-import android.content.Intent;
+-import android.content.IntentFilter;
+-import android.service.quicksettings.Tile;
+-import android.service.quicksettings.TileService;
+-
+-import org.lineageos.settings.device.R;
+-
+-public class HbmTileService extends TileService {
+-
+-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+-        @Override
+-        public void onReceive(Context context, Intent intent) {
+-            if (HbmController.ACTION_HBM_CHANGED.equals(intent.getAction())) {
+-                updateTileState(intent.getBooleanExtra(HbmController.EXTRA_HBM_STATE, false));
+-            }
+-        }
+-    };
+-
+-    @Override
+-    public void onStartListening() {
+-        super.onStartListening();
+-        IntentFilter filter = new IntentFilter(HbmController.ACTION_HBM_CHANGED);
+-        registerReceiver(mReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+-        updateTileState(HbmController.isEnabled(this));
+-    }
+-
+-    @Override
+-    public void onStopListening() {
+-        try {
+-            unregisterReceiver(mReceiver);
+-        } catch (IllegalArgumentException ignored) {
+-        }
+-        super.onStopListening();
+-    }
+-
+-    @Override
+-    public void onClick() {
+-        super.onClick();
+-        boolean newState = !HbmController.isEnabled(this);
+-        HbmController.setEnabled(this, newState);
+-        updateTileState(newState);
+-    }
+-
+-    private void updateTileState(boolean active) {
+-        Tile tile = getQsTile();
+-        if (tile == null) {
+-            return;
+-        }
+-        tile.setState(active ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
+-        tile.setSubtitle(getString(active ? R.string.tile_state_on : R.string.tile_state_off));
+-        tile.updateTile();
+-    }
+-}
+diff --git a/sepolicy/vendor/system_app.te b/sepolicy/vendor/system_app.te
+index 8471f3e..fa84242 100644
+--- a/sepolicy/vendor/system_app.te
++++ b/sepolicy/vendor/system_app.te
+@@ -1,8 +1,3 @@
+ # Battery / Bypass Charging
+ allow system_app vendor_sysfs_battery_supply:dir search;
+ allow system_app vendor_sysfs_battery_supply:file rw_file_perms;
+-
+-# Display / HBM
+-allow system_app vendor_sysfs_graphics:dir search;
+-allow system_app vendor_sysfs_graphics:file rw_file_perms;
+-allow system_app vendor_sysfs_udfps:file rw_file_perms;
+-- 
+2.55.0
+
