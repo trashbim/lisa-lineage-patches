@@ -1,16 +1,17 @@
-From 87ee712af504b8ba6d5cfd2c1a86c8002fd72589 Mon Sep 17 00:00:00 2001
+From a630e7b899ab22a6ed8027bd0f8ded3216b64b3e Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Sun, 27 Sep 2026 00:55:30 +0300
-Subject: [PATCH 13/13] sm8350-common: Optimize scheduler, input boost, uclamp
- and add Traceur
+Subject: [PATCH] sm8350-common: Optimize scheduler, input boost, uclamp and
+ add Traceur
 
 Change-Id: Id6bee99ec6946d56b7eff4dd8097c672e7b359c0
 ---
- common.mk                                  |  5 +++++
- configs/task_profiles.json                 |  8 ++++++++
- rootdir/bin/init.kernel.post_boot-yupik.sh | 14 +++++++-------
- rootdir/etc/init.qti.kernel.rc             |  2 ++
- 4 files changed, 22 insertions(+), 7 deletions(-)
+ common.mk                                  |  5 ++
+ configs/task_profiles.json                 | 26 ++++++-
+ rootdir/bin/init.kernel.post_boot-yupik.sh | 80 +++++++++-------------
+ rootdir/etc/init.qti.kernel.rc             |  4 ++
+ vendor.prop                                |  6 +-
+ 5 files changed, 71 insertions(+), 50 deletions(-)
 
 diff --git a/common.mk b/common.mk
 index bc6ec9e..984d11e 100644
@@ -26,10 +27,33 @@ index bc6ec9e..984d11e 100644
 +    Traceur
 +
 diff --git a/configs/task_profiles.json b/configs/task_profiles.json
-index 2ef1e6c..d0dbec3 100644
+index 2ef1e6c..e3fc5bb 100644
 --- a/configs/task_profiles.json
 +++ b/configs/task_profiles.json
-@@ -98,6 +98,14 @@
+@@ -85,6 +85,22 @@
+             "Controller": "cpu",
+             "Path": "foreground"
+           }
++        },
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "cpuset",
++            "Path": "foreground"
++          }
++        },
++        {
++          "Name": "SetAttribute",
++          "Params":
++          {
++            "Name": "UClampMin",
++            "Value": "20"
++          }
+         }
+       ]
+     },
+@@ -98,6 +114,14 @@
              "Controller": "cpu",
              "Path": "top-app"
            }
@@ -44,20 +68,108 @@ index 2ef1e6c..d0dbec3 100644
          }
        ]
      },
+@@ -294,7 +318,7 @@
+           "Params":
+           {
+             "Controller": "cpuset",
+-            "Path": "system-background"
++            "Path": "foreground"
+           }
+         }
+       ]
 diff --git a/rootdir/bin/init.kernel.post_boot-yupik.sh b/rootdir/bin/init.kernel.post_boot-yupik.sh
-index 7a350e4..548bf60 100755
+index 7a350e4..3b66de2 100755
 --- a/rootdir/bin/init.kernel.post_boot-yupik.sh
 +++ b/rootdir/bin/init.kernel.post_boot-yupik.sh
-@@ -183,7 +183,7 @@ echo 691200 > /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
- echo 0 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/pl
+@@ -132,59 +132,47 @@ ddr_type4="07"
+ ddr_type5="08"
+ 
+ # Core control parameters for gold
+-# Prefer CPU4 for isolation based on the thermal characteristics.
+-echo 1 0 0 > /sys/devices/system/cpu/cpu4/core_ctl/not_preferred
+-echo 2 > /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+-echo 60 > /sys/devices/system/cpu/cpu4/core_ctl/busy_up_thres
+-echo 30 > /sys/devices/system/cpu/cpu4/core_ctl/busy_down_thres
+-echo 100 > /sys/devices/system/cpu/cpu4/core_ctl/offline_delay_ms
+-echo 3 > /sys/devices/system/cpu/cpu4/core_ctl/task_thres
+-
+-# Core control parameters for gold+
+-echo 0 > /sys/devices/system/cpu/cpu7/core_ctl/min_cpus
+-echo 60 > /sys/devices/system/cpu/cpu7/core_ctl/busy_up_thres
+-echo 30 > /sys/devices/system/cpu/cpu7/core_ctl/busy_down_thres
+-echo 100 > /sys/devices/system/cpu/cpu7/core_ctl/offline_delay_ms
+-echo 1 > /sys/devices/system/cpu/cpu7/core_ctl/task_thres
+-
+-# Controls how many more tasks should be eligible to run on gold CPUs
+-# w.r.t number of gold CPUs available to trigger assist (max number of
+-# tasks eligible to run on previous cluster minus number of CPUs in
+-# the previous cluster).
+-#
+-# Setting to 1 by default which means there should be at least
+-# 4 tasks eligible to run on gold cluster (tasks running on gold cores
+-# plus misfit tasks on silver cores) to trigger assitance from gold+.
+-echo 1 > /sys/devices/system/cpu/cpu7/core_ctl/nr_prev_assist_thresh
+-
+-# Disable Core control on silver
++# Disable core control isolation on all clusters so all 8 cores remain active
++echo 0 0 0 > /sys/devices/system/cpu/cpu4/core_ctl/not_preferred
++echo 3 > /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
++echo 0 > /sys/devices/system/cpu/cpu4/core_ctl/enable
++echo 1 > /sys/devices/system/cpu/cpu7/core_ctl/min_cpus
++echo 0 > /sys/devices/system/cpu/cpu7/core_ctl/enable
+ echo 0 > /sys/devices/system/cpu/cpu0/core_ctl/enable
+ 
+ # Setting b.L scheduler parameters
+-echo 71 95 > /proc/sys/kernel/sched_upmigrate
+-echo 65 85 > /proc/sys/kernel/sched_downmigrate
+-echo 100 > /proc/sys/kernel/sched_group_upmigrate
+-echo 85 > /proc/sys/kernel/sched_group_downmigrate
++echo 65 85 > /proc/sys/kernel/sched_upmigrate
++echo 55 75 > /proc/sys/kernel/sched_downmigrate
++echo 85 > /proc/sys/kernel/sched_group_upmigrate
++echo 70 > /proc/sys/kernel/sched_group_downmigrate
+ echo 1 > /proc/sys/kernel/sched_walt_rotate_big_tasks
+ 
+-
+ echo 0 > /proc/sys/kernel/sched_coloc_busy_hysteresis_enable_cpus
+ 
+ # cpuset parameters
+ echo 0-3 > /dev/cpuset/background/cpus
+ echo 0-3 > /dev/cpuset/system-background/cpus
+ 
+-# configure governor settings for silver cluster
+-echo "schedutil" > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor
+-echo 20000 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/down_rate_limit_us
+-echo 0 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/up_rate_limit_us
+-echo 1152000 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/hispeed_freq
+-echo 691200 > /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
+-echo 0 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/pl
++# configure uclamp latency sensitivity
++echo 1 > /dev/cpuctl/top-app/cpu.uclamp.latency_sensitive
++echo 1 > /dev/cpuctl/foreground/cpu.uclamp.latency_sensitive
++
++# configure GPU min frequency to avoid frame hitching on scroll start
++echo 240000000 > /sys/class/kgsl/kgsl-3d0/devfreq/min_freq 2>/dev/null
++
++# pin display composer and surfaceflinger to gold/prime cores (4-7)
++for s in surfaceflinger vendor.qti.hardware.display.composer-service; do
++    pid=$(pidof $s)
++    if [ -n "$pid" ]; then
++        for tid in /proc/$pid/task/*; do
++            taskset -p f0 $(basename $tid) 2>/dev/null
++        done
++    fi
++done
  
  # configure input boost settings
 -echo "0:1324800" > /sys/devices/system/cpu/cpu_boost/input_boost_freq
-+echo "0:1324800 4:1344000 7:1344000" > /sys/devices/system/cpu/cpu_boost/input_boost_freq
- echo 120 > /sys/devices/system/cpu/cpu_boost/input_boost_ms
+-echo 120 > /sys/devices/system/cpu/cpu_boost/input_boost_ms
++echo "0:1324800 4:1516800 7:1516800" > /sys/devices/system/cpu/cpu_boost/input_boost_freq
++echo 150 > /sys/devices/system/cpu/cpu_boost/input_boost_ms
  
  # configure governor settings for gold cluster
-@@ -192,10 +192,10 @@ echo 10000 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/down_rate_limit_u
+ echo "schedutil" > /sys/devices/system/cpu/cpufreq/policy4/scaling_governor
+@@ -192,10 +180,10 @@ echo 10000 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/down_rate_limit_u
  echo 0 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/up_rate_limit_us
  echo 1228800 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/hispeed_freq
  echo 691200 > /sys/devices/system/cpu/cpufreq/policy4/scaling_min_freq
@@ -72,7 +184,7 @@ index 7a350e4..548bf60 100755
  echo 0 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/rtg_boost_freq
  echo 0 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/pl
  
-@@ -205,8 +205,8 @@ echo 10000 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/down_rate_limit_u
+@@ -205,8 +193,8 @@ echo 10000 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/down_rate_limit_u
  echo 0 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/up_rate_limit_us
  echo 1324800 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/hispeed_freq
  echo 806400 > /sys/devices/system/cpu/cpufreq/policy7/scaling_min_freq
@@ -84,18 +196,42 @@ index 7a350e4..548bf60 100755
  echo 0 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/pl
  
 diff --git a/rootdir/etc/init.qti.kernel.rc b/rootdir/etc/init.qti.kernel.rc
-index debd98d..47ae5de 100644
+index debd98d..cc8d917 100644
 --- a/rootdir/etc/init.qti.kernel.rc
 +++ b/rootdir/etc/init.qti.kernel.rc
-@@ -40,6 +40,8 @@ on init
+@@ -40,6 +40,10 @@ on init
      write /dev/cpuctl/background/cpu.uclamp.colocate 0
      write /dev/cpuctl/foreground/cpu.uclamp.colocate 0
      write /dev/cpuctl/top-app/cpu.uclamp.colocate 1
 +    write /dev/cpuctl/foreground/cpu.uclamp.min 5
 +    write /dev/cpuctl/top-app/cpu.uclamp.min 20
++    write /dev/cpuctl/foreground/cpu.uclamp.latency_sensitive 1
++    write /dev/cpuctl/top-app/cpu.uclamp.latency_sensitive 1
  
  on early-boot
      # Allow subsystem (modem etc) debugging
+diff --git a/vendor.prop b/vendor.prop
+index 4206616..444697b 100644
+--- a/vendor.prop
++++ b/vendor.prop
+@@ -194,14 +194,14 @@ ro.surface_flinger.has_wide_color_display=true
+ ro.surface_flinger.max_frame_buffer_acquired_buffers=3
+ ro.surface_flinger.max_virtual_display_dimension=4096
+ ro.surface_flinger.protected_contents=true
+-ro.surface_flinger.set_touch_timer_ms?=200
++ro.surface_flinger.set_touch_timer_ms=1000
+ ro.surface_flinger.supports_background_blur=0
+ ro.surface_flinger.use_color_management=true
+-ro.surface_flinger.use_content_detection_for_refresh_rate?=true
++ro.surface_flinger.use_content_detection_for_refresh_rate=false
+ ro.surface_flinger.wcg_composition_dataspace=143261696
+ ro.vendor.sf.enable_fb_scaling=1
+ vendor.display.comp_mask=0
+-vendor.display.disable_excl_rect=0
++vendor.display.disable_excl_rect=1
+ vendor.display.disable_excl_rect_partial_fb=1
+ vendor.display.disable_hw_recovery_dump=1
+ vendor.display.disable_offline_rotator=1
 -- 
 2.55.0
 
