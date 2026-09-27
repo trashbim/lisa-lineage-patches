@@ -1,18 +1,43 @@
-From a630e7b899ab22a6ed8027bd0f8ded3216b64b3e Mon Sep 17 00:00:00 2001
+From f523b5ff64d100ce056e523fa015429fa5acbec4 Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Sun, 27 Sep 2026 00:55:30 +0300
-Subject: [PATCH] sm8350-common: Optimize scheduler, input boost, uclamp and
- add Traceur
+Subject: [PATCH] sm8350-common: Optimize CPU variant, scheduler, uclamp, SF
+ and add Traceur
 
 Change-Id: Id6bee99ec6946d56b7eff4dd8097c672e7b359c0
 ---
+ BoardConfigCommon.mk                       |  8 +--
  common.mk                                  |  5 ++
  configs/task_profiles.json                 | 26 ++++++-
  rootdir/bin/init.kernel.post_boot-yupik.sh | 80 +++++++++-------------
  rootdir/etc/init.qti.kernel.rc             |  4 ++
- vendor.prop                                |  6 +-
- 5 files changed, 71 insertions(+), 50 deletions(-)
+ vendor.prop                                |  7 +-
+ 6 files changed, 76 insertions(+), 54 deletions(-)
 
+diff --git a/BoardConfigCommon.mk b/BoardConfigCommon.mk
+index 179566c..bc661de 100644
+--- a/BoardConfigCommon.mk
++++ b/BoardConfigCommon.mk
+@@ -24,15 +24,15 @@ TARGET_ARCH := arm64
+ TARGET_ARCH_VARIANT := armv8-2a
+ TARGET_CPU_ABI := arm64-v8a
+ TARGET_CPU_ABI2 :=
+-TARGET_CPU_VARIANT := generic
+-TARGET_CPU_VARIANT_RUNTIME := kryo385
++TARGET_CPU_VARIANT := cortex-a76
++TARGET_CPU_VARIANT_RUNTIME := cortex-a76
+ 
+ TARGET_2ND_ARCH := arm
+ TARGET_2ND_ARCH_VARIANT := armv8-a
+ TARGET_2ND_CPU_ABI := armeabi-v7a
+ TARGET_2ND_CPU_ABI2 := armeabi
+-TARGET_2ND_CPU_VARIANT := generic
+-TARGET_2ND_CPU_VARIANT_RUNTIME := kryo385
++TARGET_2ND_CPU_VARIANT := cortex-a76
++TARGET_2ND_CPU_VARIANT_RUNTIME := cortex-a76
+ 
+ # Audio
+ AUDIO_FEATURE_ENABLED_DLKM := true
 diff --git a/common.mk b/common.mk
 index bc6ec9e..984d11e 100644
 --- a/common.mk
@@ -211,10 +236,18 @@ index debd98d..cc8d917 100644
  on early-boot
      # Allow subsystem (modem etc) debugging
 diff --git a/vendor.prop b/vendor.prop
-index 4206616..444697b 100644
+index 4206616..b579276 100644
 --- a/vendor.prop
 +++ b/vendor.prop
-@@ -194,14 +194,14 @@ ro.surface_flinger.has_wide_color_display=true
+@@ -181,6 +181,7 @@ debug.sf.high_fps_early_phase_offset_ns=-4000000
+ debug.sf.high_fps_late_app_phase_offset_ns=1000000
+ debug.sf.high_fps_late_sf_phase_offset_ns=-4000000
+ debug.sf.latch_unsignaled=1
++debug.sf.auto_latch_unsignaled=true
+ debug.sf.set_idle_timer_ms=0
+ persist.sys.sf.color_mode=0
+ persist.sys.sf.native_mode=258
+@@ -194,14 +195,14 @@ ro.surface_flinger.has_wide_color_display=true
  ro.surface_flinger.max_frame_buffer_acquired_buffers=3
  ro.surface_flinger.max_virtual_display_dimension=4096
  ro.surface_flinger.protected_contents=true
