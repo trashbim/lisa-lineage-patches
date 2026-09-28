@@ -1,20 +1,20 @@
-From 4a310c428b489b142cd82d10a0c2f710297c802f Mon Sep 17 00:00:00 2001
+From ffe117a1b2bac288cb720c79ce278a396b10edcf Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Mon, 28 Sep 2026 11:43:39 +0300
-Subject: [PATCH 2/2] lisa: Set default and keyguard refresh rate to 90Hz,
- enable keyboard vibration
+Subject: [PATCH] lisa: Set default and keyguard refresh rate to 90Hz, enable
+ keyboard vibration
 
 Change-Id: I892997990ae13cca758e52cd8a2e262582f10c23
 ---
- rro_overlays/FrameworkOverlayLisa/res/values/config.xml | 5 ++++-
+ rro_overlays/FrameworkOverlayLisa/res/values/config.xml | 9 ++++++++-
  rro_overlays/SystemUIOverlayLisa/res/values/config.xml  | 3 +++
- 2 files changed, 7 insertions(+), 1 deletion(-)
+ 2 files changed, 11 insertions(+), 1 deletion(-)
 
 diff --git a/rro_overlays/FrameworkOverlayLisa/res/values/config.xml b/rro_overlays/FrameworkOverlayLisa/res/values/config.xml
-index a4c6d33..0a1ec1b 100644
+index a4c6d33..c0a962f 100644
 --- a/rro_overlays/FrameworkOverlayLisa/res/values/config.xml
 +++ b/rro_overlays/FrameworkOverlayLisa/res/values/config.xml
-@@ -348,11 +348,14 @@
+@@ -348,11 +348,18 @@
           If a non-zero value is set for config_defaultPeakRefreshRate, then
           config_defaultRefreshRate may be set to 0, in which case the value set for
           config_defaultPeakRefreshRate will act as the default frame rate. -->
@@ -29,6 +29,10 @@ index a4c6d33..0a1ec1b 100644
 +
 +    <!-- Whether keyboard vibration settings are supported in Settings -->
 +    <bool name="config_keyboardVibrationSettingsSupported">true</bool>
++
++    <!-- Flag indicating whether seamless refresh rate switching is supported by a device.
++         Lisa uses a rigid AMOLED panel with discrete display modes (60/90Hz) without LTPO VRR. -->
++    <bool name="config_supportsSeamlessRefreshRateSwitching">false</bool>
  </resources>
 diff --git a/rro_overlays/SystemUIOverlayLisa/res/values/config.xml b/rro_overlays/SystemUIOverlayLisa/res/values/config.xml
 index 42c20dc..4be72db 100644
