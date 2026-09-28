@@ -1,4 +1,4 @@
-From f4dcb4a75b5f25d33d4adca77bb50335816a1bbf Mon Sep 17 00:00:00 2001
+From 7d46ea3c4f40839f87144c4aab6c1301ac748f19 Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Sun, 27 Sep 2026 00:55:30 +0300
 Subject: [PATCH] sm8350-common: Optimize CPU variant, scheduler, uclamp, SF
@@ -9,12 +9,13 @@ Change-Id: Id6bee99ec6946d56b7eff4dd8097c672e7b359c0
  BoardConfigCommon.mk                          |  8 +-
  common.mk                                     |  7 +-
  configs/task_profiles.json                    | 28 ++++++-
+ gps/etc/gps.conf                              |  2 +-
  rootdir/bin/init.kernel.post_boot-yupik.sh    | 78 +++++++++----------
  rootdir/etc/init.qti.kernel.rc                |  4 +
  .../res/values/config.xml                     |  2 +-
  system.prop                                   |  1 -
  vendor.prop                                   |  9 +--
- 8 files changed, 82 insertions(+), 55 deletions(-)
+ 9 files changed, 83 insertions(+), 56 deletions(-)
 
 diff --git a/BoardConfigCommon.mk b/BoardConfigCommon.mk
 index 179566c..bc661de 100644
@@ -115,6 +116,19 @@ index 2ef1e6c..9d4df1e 100644
            }
          }
        ]
+diff --git a/gps/etc/gps.conf b/gps/etc/gps.conf
+index e0bc9a3..402e1d3 100644
+--- a/gps/etc/gps.conf
++++ b/gps/etc/gps.conf
+@@ -358,7 +358,7 @@ NI_SUPL_DENY_ON_NFW_LOCKED = 0
+ # Allow buffer diag log packets when diag memory allocation
+ # fails during boot up time.
+ ##################################################
+-BUFFER_DIAG_LOGGING = 1
++BUFFER_DIAG_LOGGING = 0
+ 
+ #######################################
+ #  NTRIP CLIENT LIBRARY NAME
 diff --git a/rootdir/bin/init.kernel.post_boot-yupik.sh b/rootdir/bin/init.kernel.post_boot-yupik.sh
 index 7a350e4..61cfd44 100755
 --- a/rootdir/bin/init.kernel.post_boot-yupik.sh
