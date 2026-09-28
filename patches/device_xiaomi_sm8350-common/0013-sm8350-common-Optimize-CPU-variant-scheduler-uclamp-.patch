@@ -1,4 +1,4 @@
-From f523b5ff64d100ce056e523fa015429fa5acbec4 Mon Sep 17 00:00:00 2001
+From 371e2f31d22a9dc8cf68352e172ed962b94a4a39 Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Sun, 27 Sep 2026 00:55:30 +0300
 Subject: [PATCH] sm8350-common: Optimize CPU variant, scheduler, uclamp, SF
@@ -6,13 +6,14 @@ Subject: [PATCH] sm8350-common: Optimize CPU variant, scheduler, uclamp, SF
 
 Change-Id: Id6bee99ec6946d56b7eff4dd8097c672e7b359c0
 ---
- BoardConfigCommon.mk                       |  8 +--
- common.mk                                  |  5 ++
- configs/task_profiles.json                 | 26 ++++++-
- rootdir/bin/init.kernel.post_boot-yupik.sh | 80 +++++++++-------------
- rootdir/etc/init.qti.kernel.rc             |  4 ++
- vendor.prop                                |  7 +-
- 6 files changed, 76 insertions(+), 54 deletions(-)
+ BoardConfigCommon.mk                          |  8 +-
+ common.mk                                     |  5 ++
+ configs/task_profiles.json                    | 26 ++++++-
+ rootdir/bin/init.kernel.post_boot-yupik.sh    | 78 +++++++++----------
+ rootdir/etc/init.qti.kernel.rc                |  4 +
+ .../res/values/config.xml                     |  2 +-
+ vendor.prop                                   |  9 ++-
+ 7 files changed, 81 insertions(+), 51 deletions(-)
 
 diff --git a/BoardConfigCommon.mk b/BoardConfigCommon.mk
 index 179566c..bc661de 100644
@@ -103,10 +104,10 @@ index 2ef1e6c..e3fc5bb 100644
          }
        ]
 diff --git a/rootdir/bin/init.kernel.post_boot-yupik.sh b/rootdir/bin/init.kernel.post_boot-yupik.sh
-index 7a350e4..3b66de2 100755
+index 7a350e4..61cfd44 100755
 --- a/rootdir/bin/init.kernel.post_boot-yupik.sh
 +++ b/rootdir/bin/init.kernel.post_boot-yupik.sh
-@@ -132,59 +132,47 @@ ddr_type4="07"
+@@ -132,48 +132,48 @@ ddr_type4="07"
  ddr_type5="08"
  
  # Core control parameters for gold
@@ -162,13 +163,6 @@ index 7a350e4..3b66de2 100755
  echo 0-3 > /dev/cpuset/background/cpus
  echo 0-3 > /dev/cpuset/system-background/cpus
  
--# configure governor settings for silver cluster
--echo "schedutil" > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor
--echo 20000 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/down_rate_limit_us
--echo 0 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/up_rate_limit_us
--echo 1152000 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/hispeed_freq
--echo 691200 > /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
--echo 0 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/pl
 +# configure uclamp latency sensitivity
 +echo 1 > /dev/cpuctl/top-app/cpu.uclamp.latency_sensitive
 +echo 1 > /dev/cpuctl/foreground/cpu.uclamp.latency_sensitive
@@ -185,16 +179,25 @@ index 7a350e4..3b66de2 100755
 +        done
 +    fi
 +done
- 
- # configure input boost settings
--echo "0:1324800" > /sys/devices/system/cpu/cpu_boost/input_boost_freq
--echo 120 > /sys/devices/system/cpu/cpu_boost/input_boost_ms
++
++# configure input boost settings
 +echo "0:1324800 4:1516800 7:1516800" > /sys/devices/system/cpu/cpu_boost/input_boost_freq
 +echo 150 > /sys/devices/system/cpu/cpu_boost/input_boost_ms
++
+ # configure governor settings for silver cluster
+ echo "schedutil" > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor
+ echo 20000 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/down_rate_limit_us
+@@ -182,20 +182,16 @@ echo 1152000 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/hispeed_freq
+ echo 691200 > /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
+ echo 0 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/pl
  
+-# configure input boost settings
+-echo "0:1324800" > /sys/devices/system/cpu/cpu_boost/input_boost_freq
+-echo 120 > /sys/devices/system/cpu/cpu_boost/input_boost_ms
+-
  # configure governor settings for gold cluster
  echo "schedutil" > /sys/devices/system/cpu/cpufreq/policy4/scaling_governor
-@@ -192,10 +180,10 @@ echo 10000 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/down_rate_limit_u
+ echo 10000 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/down_rate_limit_us
  echo 0 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/up_rate_limit_us
  echo 1228800 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/hispeed_freq
  echo 691200 > /sys/devices/system/cpu/cpufreq/policy4/scaling_min_freq
@@ -209,7 +212,7 @@ index 7a350e4..3b66de2 100755
  echo 0 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/rtg_boost_freq
  echo 0 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/pl
  
-@@ -205,8 +193,8 @@ echo 10000 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/down_rate_limit_u
+@@ -205,8 +201,8 @@ echo 10000 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/down_rate_limit_u
  echo 0 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/up_rate_limit_us
  echo 1324800 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/hispeed_freq
  echo 806400 > /sys/devices/system/cpu/cpufreq/policy7/scaling_min_freq
@@ -235,8 +238,19 @@ index debd98d..cc8d917 100644
  
  on early-boot
      # Allow subsystem (modem etc) debugging
+diff --git a/rro_overlays/FrameworkOverlaySM8350/res/values/config.xml b/rro_overlays/FrameworkOverlaySM8350/res/values/config.xml
+index 1ba0f37..934d757 100644
+--- a/rro_overlays/FrameworkOverlaySM8350/res/values/config.xml
++++ b/rro_overlays/FrameworkOverlaySM8350/res/values/config.xml
+@@ -172,5 +172,5 @@
+     </string-array>
+ 
+     <!-- Default: 60 MB. Bytes that the PinnerService will pin for Home app -->
+-    <integer name="config_pinnerHomePinBytes">6291456</integer>
++    <integer name="config_pinnerHomePinBytes">62914560</integer>
+ </resources>
 diff --git a/vendor.prop b/vendor.prop
-index 4206616..b579276 100644
+index 4206616..7108f41 100644
 --- a/vendor.prop
 +++ b/vendor.prop
 @@ -181,6 +181,7 @@ debug.sf.high_fps_early_phase_offset_ns=-4000000
@@ -265,6 +279,15 @@ index 4206616..b579276 100644
  vendor.display.disable_excl_rect_partial_fb=1
  vendor.display.disable_hw_recovery_dump=1
  vendor.display.disable_offline_rotator=1
+@@ -227,7 +228,7 @@ ro.vendor.se.type=eSE,HCE,UICC
+ 
+ # Perf
+ ro.vendor.extension_library=libqti-perfd-client.so
+-ro.vendor.perf.scroll_opt=0
++ro.vendor.perf.scroll_opt=1
+ 
+ # Radio
+ keyguard.no_require_sim=true
 -- 
 2.55.0
 

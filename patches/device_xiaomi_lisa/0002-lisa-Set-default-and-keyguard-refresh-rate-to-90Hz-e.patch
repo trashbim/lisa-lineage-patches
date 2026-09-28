@@ -1,0 +1,47 @@
+From 4a310c428b489b142cd82d10a0c2f710297c802f Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Mon, 28 Sep 2026 11:43:39 +0300
+Subject: [PATCH 2/2] lisa: Set default and keyguard refresh rate to 90Hz,
+ enable keyboard vibration
+
+Change-Id: I892997990ae13cca758e52cd8a2e262582f10c23
+---
+ rro_overlays/FrameworkOverlayLisa/res/values/config.xml | 5 ++++-
+ rro_overlays/SystemUIOverlayLisa/res/values/config.xml  | 3 +++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/rro_overlays/FrameworkOverlayLisa/res/values/config.xml b/rro_overlays/FrameworkOverlayLisa/res/values/config.xml
+index a4c6d33..0a1ec1b 100644
+--- a/rro_overlays/FrameworkOverlayLisa/res/values/config.xml
++++ b/rro_overlays/FrameworkOverlayLisa/res/values/config.xml
+@@ -348,11 +348,14 @@
+          If a non-zero value is set for config_defaultPeakRefreshRate, then
+          config_defaultRefreshRate may be set to 0, in which case the value set for
+          config_defaultPeakRefreshRate will act as the default frame rate. -->
+-    <integer name="config_defaultRefreshRate">0</integer>
++    <integer name="config_defaultRefreshRate">90</integer>
+ 
+     <!-- The default peak refresh rate for a given device. Change this value if you want to prevent
+          the framework from using higher refresh rates, even if display modes with higher refresh
+          rates are available from hardware composer. Only has an effect if the value is
+          non-zero. -->
+     <integer name="config_defaultPeakRefreshRate">90</integer>
++
++    <!-- Whether keyboard vibration settings are supported in Settings -->
++    <bool name="config_keyboardVibrationSettingsSupported">true</bool>
+ </resources>
+diff --git a/rro_overlays/SystemUIOverlayLisa/res/values/config.xml b/rro_overlays/SystemUIOverlayLisa/res/values/config.xml
+index 42c20dc..4be72db 100644
+--- a/rro_overlays/SystemUIOverlayLisa/res/values/config.xml
++++ b/rro_overlays/SystemUIOverlayLisa/res/values/config.xml
+@@ -9,4 +9,7 @@
+          corner edges), this pulls out just the curve.
+      -->
+     <string name="config_rounded_mask" translatable="false">M22,0C19.94,0.01 18.83,0.04 17.73,0.11C16.91,0.17 16.09,0.25 15.3,0.36C14.5,0.48 13.72,0.62 12.95,0.81C11.42,1.19 9.97,1.72 8.65,2.43C7.32,3.14 6.12,4.02 5.08,5.07C4.04,6.11 3.15,7.31 2.44,8.64C1.73,9.97 1.19,11.42 0.82,12.94C0.63,13.7 0.48,14.49 0.37,15.29C0.25,16.09 0.17,16.9 0.12,17.72C0.05,18.82 0.02,19.93 0.01,21.55</string>
++
++    <!-- Preferred max refresh rate at keyguard, if supported by the display. -->
++    <integer name="config_keyguardMaxRefreshRate">90</integer>
+ </resources>
+-- 
+2.55.0
+
