@@ -1,0 +1,264 @@
+From ce6fa6f38a07b766a0795bed7a1995384e759499 Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Wed, 30 Sep 2026 14:42:18 +0300
+Subject: [PATCH] Launcher3: Add kill app button in Overview task cards
+
+- Style task dismiss button in top-right corner to match app chip (36dp, Material Surface background, ripple, cross icon)
+- Force stop app process and remove task on tap
+- Grant FORCE_STOP_PACKAGES privileged permission to com.android.launcher3
+
+Change-Id: Iecabe6c0aceb5ef2a92586eb5f1bc5fa3532c518
+---
+ com.android.launcher3-extra.xml               |  1 +
+ quickstep/AndroidManifest.xml                 |  1 +
+ quickstep/res/layout/task_dismiss_button.xml  | 33 ++++++----
+ .../com/android/quickstep/views/TaskView.kt   | 62 +++++++++----------
+ res/drawable/ic_close_app_chip.xml            | 28 +++++++++
+ res/drawable/task_dismiss_button_bg.xml       | 20 ++++++
+ 6 files changed, 102 insertions(+), 43 deletions(-)
+ create mode 100644 res/drawable/ic_close_app_chip.xml
+ create mode 100644 res/drawable/task_dismiss_button_bg.xml
+
+diff --git a/com.android.launcher3-extra.xml b/com.android.launcher3-extra.xml
+index 55468de..12e6e13 100644
+--- a/com.android.launcher3-extra.xml
++++ b/com.android.launcher3-extra.xml
+@@ -17,5 +17,6 @@
+ <permissions>
+     <privapp-permissions package="com.android.launcher3">
+         <permission name="android.permission.ACCESS_CONTEXTUAL_SEARCH" />
++        <permission name="android.permission.FORCE_STOP_PACKAGES" />
+     </privapp-permissions>
+ </permissions>
+diff --git a/quickstep/AndroidManifest.xml b/quickstep/AndroidManifest.xml
+index 0dd735e..1bcef8c 100644
+--- a/quickstep/AndroidManifest.xml
++++ b/quickstep/AndroidManifest.xml
+@@ -28,6 +28,7 @@
+     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
+     <uses-permission android:name="android.permission.START_TASKS_FROM_RECENTS"/>
+     <uses-permission android:name="android.permission.REMOVE_TASKS"/>
++    <uses-permission android:name="android.permission.FORCE_STOP_PACKAGES"/>
+     <uses-permission android:name="android.permission.WRITE_SECURE_SETTINGS"/>
+     <uses-permission android:name="android.permission.MANAGE_ACTIVITY_TASKS"/>
+     <uses-permission android:name="android.permission.INTERNAL_SYSTEM_WINDOW"/>
+diff --git a/quickstep/res/layout/task_dismiss_button.xml b/quickstep/res/layout/task_dismiss_button.xml
+index 1f371c0..97f096a 100644
+--- a/quickstep/res/layout/task_dismiss_button.xml
++++ b/quickstep/res/layout/task_dismiss_button.xml
+@@ -1,5 +1,7 @@
++<?xml version="1.0" encoding="utf-8"?>
+ <!--
+   ~ Copyright (C) 2025 The Android Open Source Project
++  ~ Copyright (C) 2026 The LineageOS Project
+   ~
+   ~ Licensed under the Apache License, Version 2.0 (the "License");
+   ~ you may not use this file except in compliance with the License.
+@@ -19,17 +21,26 @@
+     android:id="@+id/task_dismiss_button"
+     android:layout_width="wrap_content"
+     android:layout_height="wrap_content"
+-    android:layout_gravity="end"
+-    android:padding="@dimen/task_dismiss_button_padding"
+-    android:layout_margin="@dimen/task_dismiss_button_margin"
+-    android:alpha="0">
+-    <ImageButton
+-        android:layout_width="@dimen/task_dismiss_button_width"
+-        android:layout_height="@dimen/task_dismiss_button_width"
+-        android:src="@drawable/ic_circle_dismiss"
+-        android:background="@drawable/circle_dismiss_background"
+-        android:backgroundTint="@color/materialColorPrimary"
++    android:layout_gravity="top|end"
++    android:layout_marginTop="6dp"
++    android:layout_marginEnd="6dp"
++    android:padding="6dp"
++    android:clipToPadding="false"
++    android:clipChildren="false"
++    android:clickable="true"
++    android:focusable="true">
++
++    <ImageView
++        android:layout_width="36dp"
++        android:layout_height="36dp"
++        android:elevation="@dimen/task_thumbnail_icon_menu_elevation"
++        android:background="@drawable/task_dismiss_button_bg"
++        android:foreground="@drawable/app_chip_fg"
++        android:src="@drawable/ic_close_app_chip"
++        android:scaleType="centerInside"
++        android:padding="8dp"
++        android:clipToOutline="true"
+         android:duplicateParentState="true"
+         android:clickable="false"
+-        android:contentDescription="@string/recent_task_option_remove_task" />
++        android:importantForAccessibility="no" />
+ </FrameLayout>
+\ No newline at end of file
+diff --git a/quickstep/src/com/android/quickstep/views/TaskView.kt b/quickstep/src/com/android/quickstep/views/TaskView.kt
+index effda1c..1d6e794 100644
+--- a/quickstep/src/com/android/quickstep/views/TaskView.kt
++++ b/quickstep/src/com/android/quickstep/views/TaskView.kt
+@@ -20,6 +20,7 @@ import android.animation.AnimatorListenerAdapter
+ import android.animation.AnimatorSet
+ import android.animation.ObjectAnimator
+ import android.annotation.IdRes
++import android.app.ActivityManager
+ import android.app.ActivityOptions
+ import android.app.ActivityTaskManager.INVALID_TASK_ID
+ import android.app.WindowConfiguration.WINDOWING_MODE_FULLSCREEN
+@@ -667,25 +668,7 @@ constructor(
+     }
+ 
+     private fun hideTaskDismissButton() {
+-        if (!taskDismissButtonEnabled) return
+-
+-        val taskDismissButton = taskDismissButton ?: return
+-
+-        if (taskDismissButtonAnimator?.isRunning == true) {
+-            taskDismissButtonAnimator?.cancel()
+-        }
+-
+-        if (taskDismissButton.alpha == 0f) {
+-            return
+-        }
+-
+-        taskDismissButtonAnimator =
+-            ObjectAnimator.ofFloat(taskDismissButton, View.ALPHA, 0f).apply {
+-                duration = DEFAULT_DISAPPEARANCE_ANIMATION_DURATION_MS
+-                interpolator = DEFAULT_INTERPOLATOR
+-                doOnCancel { taskDismissButton.alpha = 0f }
+-                start()
+-            }
++        // Keep dismiss button permanently visible
+     }
+ 
+     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+@@ -985,31 +968,45 @@ constructor(
+                     }
+                 }
+ 
+-                val dismissTaskViewOnClick: (View) -> Unit = {
+-                    recentsView?.dismissTaskView(
+-                        container.taskView,
+-                        /* animateTaskView = */ true,
+-                        /* removeTask= */ true,
+-                    )
+-                }
+-                setTaskDismissButtonState(
+-                    TaskUiStateMapper.toTaskDismissButtonState(
+-                        (type == TaskViewType.DESKTOP),
+-                        dismissTaskViewOnClick,
+-                    )
+-                )
++                setupTaskDismissButton()
+             }
+         }
+ 
++    private fun setupTaskDismissButton() {
++        val dismissTaskViewOnClick: (View) -> Unit = {
++            taskContainers.forEach { taskContainer ->
++                val packageName = taskContainer.task.key.packageName ?: return@forEach
++                val userId = taskContainer.task.key.userId
++                try {
++                    context.getSystemService(ActivityManager::class.java)
++                        ?.forceStopPackageAsUser(packageName, userId)
++                } catch (e: Exception) {
++                    Log.e(TAG, "Failed to force stop package $packageName", e)
++                }
++            }
++            recentsView?.dismissTaskView(
++                this,
++                /* animateTaskView = */ true,
++                /* removeTask= */ true,
++            )
++        }
++        setTaskDismissButtonState(
++            TaskDismissButtonState.Enabled(dismissTaskViewOnClick)
++        )
++    }
++
+     private fun setTaskDismissButtonState(state: TaskDismissButtonState) {
+         when (state) {
+             is TaskDismissButtonState.Enabled -> {
+                 taskDismissButtonEnabled = true
+                 taskDismissButton?.setOnClickListener(state.clickCloseListener)
++                taskDismissButton?.alpha = 1f
++                taskDismissButton?.visibility = View.VISIBLE
+             }
+             is TaskDismissButtonState.Disabled -> {
+                 taskDismissButtonEnabled = false
+                 taskDismissButton?.setOnClickListener(null)
++                taskDismissButton?.visibility = View.GONE
+             }
+         }
+     }
+@@ -1160,6 +1157,7 @@ constructor(
+                     }
+                 }
+             }
++            setupTaskDismissButton()
+             setOrientationState(orientedState)
+         }
+ 
+diff --git a/res/drawable/ic_close_app_chip.xml b/res/drawable/ic_close_app_chip.xml
+new file mode 100644
+index 0000000..6a53f16
+--- /dev/null
++++ b/res/drawable/ic_close_app_chip.xml
+@@ -0,0 +1,28 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++     Copyright (C) 2026 The LineageOS Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp"
++    android:height="24dp"
++    android:viewportWidth="24"
++    android:viewportHeight="24"
++    android:tint="@color/materialColorOnSurface">
++  <group>
++    <path
++        android:pathData="M12 13.294 9.094 16.2a.88.88 0 0 1-.638.281.954.954 0 0 1-.637-.3.88.88 0 0 1-.282-.637.9.9 0 0 1 .282-.657L10.706 12 7.8 9.094a.88.88 0 0 1-.281-.638.972.972 0 0 1 .3-.656.88.88 0 0 1 .637-.281.9.9 0 0 1 .657.281L12 10.706 14.906 7.8a.88.88 0 0 1 .638-.281.9.9 0 0 1 .656.281.9.9 0 0 1 .281.656.88.88 0 0 1-.281.638L13.294 12l2.906 2.906a.88.88 0 0 1 .281.638.88.88 0 0 1-.281.637.9.9 0 0 1-.656.281.88.88 0 0 1-.638-.28L12 13.293Z"
++        android:fillColor="@android:color/white"/>
++  </group>
++</vector>
+diff --git a/res/drawable/task_dismiss_button_bg.xml b/res/drawable/task_dismiss_button_bg.xml
+new file mode 100644
+index 0000000..78841e9
+--- /dev/null
++++ b/res/drawable/task_dismiss_button_bg.xml
+@@ -0,0 +1,20 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++     Copyright (C) 2026 The LineageOS Project
++
++     Licensed under the Apache License, Version 2.0 (the "License");
++     you may not use this file except in compliance with the License.
++     You may obtain a copy of the License at
++
++          http://www.apache.org/licenses/LICENSE-2.0
++
++     Unless required by applicable law or agreed to in writing, software
++     distributed under the License is distributed on an "AS IS" BASIS,
++     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++     See the License for the specific language governing permissions and
++     limitations under the License.
++-->
++<shape xmlns:android="http://schemas.android.com/apk/res/android"
++    android:shape="oval">
++    <solid android:color="@color/materialColorSurfaceBright" />
++</shape>
+-- 
+2.55.0
+

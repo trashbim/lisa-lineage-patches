@@ -24,6 +24,7 @@ PROJECTS=(
     "device/xiaomi/sm8350-common:device_xiaomi_sm8350-common"
     "frameworks/base:frameworks_base"
     "kernel/xiaomi/sm8350:kernel_xiaomi_sm8350"
+    "packages/apps/Launcher3:packages_apps_Launcher3"
     "packages/apps/Settings:packages_apps_Settings"
     "vendor/lineage:vendor_lineage"
 )
@@ -111,11 +112,10 @@ export_patches() {
     log_ok "Export completed! Ready to git commit & push in $SCRIPT_DIR."
 }
 
-case "$1" in
-    --export)
-        export_patches
-        ;;
-    *)
-        apply_patches
-        ;;
-esac
+if [ "$1" = "--export" ]; then
+    LINEAGE_ROOT="${2:-/mnt/ssd/lineage}"
+    export_patches
+else
+    LINEAGE_ROOT="${1:-/mnt/ssd/lineage}"
+    apply_patches
+fi
