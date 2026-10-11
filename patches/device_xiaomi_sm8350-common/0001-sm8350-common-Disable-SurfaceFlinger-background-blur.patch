@@ -27,5 +27,5 @@ index e6c9e02..d5dd376 100644
  ro.surface_flinger.use_content_detection_for_refresh_rate?=true
  ro.surface_flinger.wcg_composition_dataspace=143261696
 -- 
-2.55.0
+2.56.0
 

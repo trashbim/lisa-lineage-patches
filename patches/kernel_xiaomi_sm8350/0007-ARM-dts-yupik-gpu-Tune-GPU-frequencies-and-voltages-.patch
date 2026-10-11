@@ -1,6 +1,6 @@
-From e995c6558197cce983070c6ac86d4346ddf1e44b Mon Sep 17 00:00:00 2001
+From 5cda17ecc867194fe6ea88d2a0301a70c9bbc849 Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
-Date: Mon, 21 Sep 2026 16:49:19 +0300
+Date: Sun, 11 Oct 2026 16:11:43 +0300
 Subject: [PATCH 7/7] ARM: dts: yupik-gpu: Tune GPU frequencies and voltages
  for speed-bin 117 (180-563 MHz)
 
@@ -15,11 +15,11 @@ Apply proven 180-563 MHz profile matching KonaBess configuration:
 
 Change-Id: Ic1ab38380f5713d9d94def9b369cacbbcbde6681
 ---
- .../arm64/boot/dts/vendor/qcom/yupik-gpu.dtsi | 82 +++++++++++++++----
- 1 file changed, 65 insertions(+), 17 deletions(-)
+ .../arm64/boot/dts/vendor/qcom/yupik-gpu.dtsi | 80 +++++++++++++++----
+ 1 file changed, 64 insertions(+), 16 deletions(-)
 
 diff --git a/arch/arm64/boot/dts/vendor/qcom/yupik-gpu.dtsi b/arch/arm64/boot/dts/vendor/qcom/yupik-gpu.dtsi
-index da9b0fdd4f37..1b0ffdd35399 100644
+index da9b0fdd4f37..afabcf162b4d 100644
 --- a/arch/arm64/boot/dts/vendor/qcom/yupik-gpu.dtsi
 +++ b/arch/arm64/boot/dts/vendor/qcom/yupik-gpu.dtsi
 @@ -398,43 +398,75 @@
@@ -38,17 +38,16 @@ index da9b0fdd4f37..1b0ffdd35399 100644
  
 -					qcom,bus-freq-ddr7 = <9>;
 -					qcom,bus-min-ddr7 = <8>;
--					qcom,bus-max-ddr7 = <11>;
-+					qcom,bus-freq-ddr7 = <12>;
-+					qcom,bus-min-ddr7 = <12>;
-+					qcom,bus-max-ddr7 = <12>;
++					qcom,bus-freq-ddr7 = <11>;
++					qcom,bus-min-ddr7 = <11>;
+ 					qcom,bus-max-ddr7 = <11>;
  
 -					qcom,bus-freq-ddr8 = <7>;
 -					qcom,bus-min-ddr8 = <6>;
 -					qcom,bus-max-ddr8 = <9>;
-+					qcom,bus-freq-ddr8 = <11>;
-+					qcom,bus-min-ddr8 = <11>;
-+					qcom,bus-max-ddr8 = <11>;
++					qcom,bus-freq-ddr8 = <10>;
++					qcom,bus-min-ddr8 = <10>;
++					qcom,bus-max-ddr8 = <10>;
  
  					qcom,acd-level = <0x802B5FFD>;
  				};
@@ -139,5 +138,5 @@ index da9b0fdd4f37..1b0ffdd35399 100644
  			qcom,gpu-pwrlevels-3 {
  				#address-cells = <1>;
 -- 
-2.55.0
+2.56.0
 

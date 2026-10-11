@@ -1,7 +1,7 @@
-From 79beffbc118349ecc5ae6a030a29f3f481d06516 Mon Sep 17 00:00:00 2001
+From a1ab46d60c393e42e1963fa43a9364b27fd51ad4 Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Fri, 18 Sep 2026 22:45:08 +0300
-Subject: [PATCH 1/2] lisa: Adjust display cutout and status bar height to
+Subject: [PATCH 2/2] lisa: Adjust display cutout and status bar height to
  100px
 
 Align status bar height and cutout bounding box directly to the bottom
@@ -15,7 +15,7 @@ Change-Id: I4ad443c2bea7d76b534e401fac48933db1b6fe47
  2 files changed, 2 insertions(+), 3 deletions(-)
 
 diff --git a/rro_overlays/FrameworkOverlayLisa/res/values/config.xml b/rro_overlays/FrameworkOverlayLisa/res/values/config.xml
-index 4faef3f..a4c6d33 100644
+index 80fd470..c0a962f 100644
 --- a/rro_overlays/FrameworkOverlayLisa/res/values/config.xml
 +++ b/rro_overlays/FrameworkOverlayLisa/res/values/config.xml
 @@ -334,8 +334,7 @@
@@ -42,5 +42,5 @@ index 5ea4f6e..501673d 100644
      <!-- Height of the status bar in landscape.
           Do not read this dimen directly. Use {@link SystemBarUtils#getStatusBarHeight} instead.
 -- 
-2.55.0
+2.56.0
 

@@ -1,7 +1,7 @@
-From ffe117a1b2bac288cb720c79ce278a396b10edcf Mon Sep 17 00:00:00 2001
+From 7a7452ad398f536e7ef4c0fc51e8e58d33bcb2e8 Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Mon, 28 Sep 2026 11:43:39 +0300
-Subject: [PATCH 2/2] lisa: Set default and keyguard refresh rate to 90Hz,
+Subject: [PATCH 1/2] lisa: Set default and keyguard refresh rate to 90Hz,
  enable keyboard vibration
 
 Change-Id: I892997990ae13cca758e52cd8a2e262582f10c23
@@ -11,10 +11,10 @@ Change-Id: I892997990ae13cca758e52cd8a2e262582f10c23
  2 files changed, 11 insertions(+), 1 deletion(-)
 
 diff --git a/rro_overlays/FrameworkOverlayLisa/res/values/config.xml b/rro_overlays/FrameworkOverlayLisa/res/values/config.xml
-index a4c6d33..c0a962f 100644
+index 4faef3f..80fd470 100644
 --- a/rro_overlays/FrameworkOverlayLisa/res/values/config.xml
 +++ b/rro_overlays/FrameworkOverlayLisa/res/values/config.xml
-@@ -348,11 +348,18 @@
+@@ -349,11 +349,18 @@
           If a non-zero value is set for config_defaultPeakRefreshRate, then
           config_defaultRefreshRate may be set to 0, in which case the value set for
           config_defaultPeakRefreshRate will act as the default frame rate. -->
@@ -47,5 +47,5 @@ index 42c20dc..4be72db 100644
 +    <integer name="config_keyguardMaxRefreshRate">90</integer>
  </resources>
 -- 
-2.55.0
+2.56.0
 

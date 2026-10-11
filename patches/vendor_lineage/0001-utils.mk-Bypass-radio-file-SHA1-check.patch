@@ -1,4 +1,4 @@
-From 12a8d7ee7fdc23929f9222fd3463da7d38e7949c Mon Sep 17 00:00:00 2001
+From 8183924f19733a3958bc14792c24b6ba2f1a6d3c Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Thu, 24 Sep 2026 21:34:27 +0300
 Subject: [PATCH] utils.mk: Bypass radio file SHA1 check
@@ -23,5 +23,5 @@ index 6b5a9e2..64dbd8a 100644
 +  $(call add-radio-file,$(1))
  endef
 -- 
-2.55.0
+2.56.0
 
