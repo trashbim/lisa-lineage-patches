@@ -1,0 +1,55 @@
+From f4deaa51a676594ee3b1f9ef03668cbceaba7c1a Mon Sep 17 00:00:00 2001
+From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
+Date: Thu, 15 Oct 2026 01:46:34 +0300
+Subject: [PATCH 15/15] sm8350-common: Optimize touch responsiveness,
+ background AOT dexopt and HWUI HintManager
+
+- Reduce tap timeout from 100ms to 60ms and touch slop from 8dp to 5dp
+  for instantaneous touch and scroll response on 240Hz panel.
+- Set pm.dexopt.bg-dexopt=speed to compile apps fully to native machine code
+  during idle maintenance, eliminating runtime JIT stutter.
+- Enable debug.hwui.use_hint_manager and 70% CPU time target to feed frame
+  render timings directly to ADPF and PowerHAL.
+
+Change-Id: I4da052da95e7514885d86453d186ad69ddb5925d
+---
+ rro_overlays/FrameworkOverlaySM8350/res/values/config.xml | 6 ++++++
+ vendor.prop                                               | 8 ++++++++
+ 2 files changed, 14 insertions(+)
+
+diff --git a/rro_overlays/FrameworkOverlaySM8350/res/values/config.xml b/rro_overlays/FrameworkOverlaySM8350/res/values/config.xml
+index 934d757..d4fc9a0 100644
+--- a/rro_overlays/FrameworkOverlaySM8350/res/values/config.xml
++++ b/rro_overlays/FrameworkOverlaySM8350/res/values/config.xml
+@@ -173,4 +173,10 @@
+ 
+     <!-- Default: 60 MB. Bytes that the PinnerService will pin for Home app -->
+     <integer name="config_pinnerHomePinBytes">62914560</integer>
++
++    <!-- Touch responsiveness: reduce tap timeout from 100ms to 60ms for instant tap detection -->
++    <integer name="config_tapTimeoutMillis">60</integer>
++
++    <!-- Calibrate touch slop from 8dp to 5dp for instantaneous scroll engagement on 240Hz touch panel -->
++    <dimen name="config_viewConfigurationTouchSlop">5dp</dimen>
+ </resources>
+diff --git a/vendor.prop b/vendor.prop
+index 63bef8b..c39353d 100644
+--- a/vendor.prop
++++ b/vendor.prop
+@@ -306,5 +306,13 @@ dalvik.vm.boot-dex2oat-threads=8
+ dalvik.vm.dex2oat-threads=6
+ dalvik.vm.image-dex2oat-threads=8
+ 
++# ART / Dexopt: Compile apps ahead-of-time to native machine code in background
++pm.dexopt.bg-dexopt=speed
++
++# HWUI / ADPF: Enable HintManager for frame deadline tracking and dynamic boost
++debug.hwui.use_hint_manager=true
++debug.hwui.target_cpu_time_percent=70
++
++
+ 
+ 
+-- 
+2.56.0
+
