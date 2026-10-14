@@ -1,0 +1,33 @@
+From 3e385c90eb43b6f0363a0b8738b3b69cb4067783 Mon Sep 17 00:00:00 2001
+From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
+Date: Thu, 15 Oct 2026 01:21:01 +0300
+Subject: [PATCH 14/14] sm8350-common: Accelerate app compilation with dex2oat
+ on 8-core CPU
+
+Set boot-dex2oat-threads and image-dex2oat-threads to 8, and runtime
+dex2oat-threads to 6 to take advantage of all CPU cores during app
+installation and background dexopt.
+
+Change-Id: Iaa1bd0a60f8d65ccae4eb5780e3c0440b582804b
+---
+ vendor.prop | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/vendor.prop b/vendor.prop
+index e5213a1..63bef8b 100644
+--- a/vendor.prop
++++ b/vendor.prop
+@@ -301,4 +301,10 @@ persist.vendor.radio.snapshot_enabled=0
+ dalvik.vm.minidebuginfo=false
+ dalvik.vm.dex2oat-minidebuginfo=false
+ 
++# Accelerate app compilation with dex2oat on 8-core CPU
++dalvik.vm.boot-dex2oat-threads=8
++dalvik.vm.dex2oat-threads=6
++dalvik.vm.image-dex2oat-threads=8
++
++
+ 
+-- 
+2.56.0
+

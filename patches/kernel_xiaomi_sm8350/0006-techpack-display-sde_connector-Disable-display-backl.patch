@@ -1,7 +1,7 @@
 From 874947a3c78cc723c34907ad20510ec89777417d Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Fri, 18 Sep 2026 23:36:40 +0300
-Subject: [PATCH 6/8] techpack: display: sde_connector: Disable display
+Subject: [PATCH 6/9] techpack: display: sde_connector: Disable display
  backlight thermal throttling
 
 Change-Id: Ie8d6e37851a6da1f5477c9f7185fe5ce02c9fd89

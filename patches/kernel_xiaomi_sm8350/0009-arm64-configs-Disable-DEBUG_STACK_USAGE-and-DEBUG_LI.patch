@@ -1,0 +1,32 @@
+From 27b082b8e8ad0a5e7483ae17360d0bd5694d7f2e Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Thu, 15 Oct 2026 01:20:48 +0300
+Subject: [PATCH 9/9] arm64: configs: Disable DEBUG_STACK_USAGE and DEBUG_LIST
+ overhead
+
+CONFIG_DEBUG_STACK_USAGE instruments kernel stack utilization by painting
+stacks with 0x47 and scanning them on thread exit, which slows down process
+creation. CONFIG_DEBUG_LIST performs pointer validation on every list_head
+modification in kernel hotpaths. Disable both in production for lower overhead.
+
+Change-Id: I9575b736c8b11a118a15ce8936f9eaefde77d59c
+---
+ arch/arm64/configs/vendor/xiaomi_QGKI.config | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm64/configs/vendor/xiaomi_QGKI.config b/arch/arm64/configs/vendor/xiaomi_QGKI.config
+index c63ead5d43df..eea8ca60320f 100644
+--- a/arch/arm64/configs/vendor/xiaomi_QGKI.config
++++ b/arch/arm64/configs/vendor/xiaomi_QGKI.config
+@@ -55,3 +55,8 @@ CONFIG_NET_SCH_FQ=y
+ 
+ # Disable scheduler stats overhead (also force-enabled at boot by atrace.rc)
+ # CONFIG_SCHEDSTATS is not set
++
++# Disable stack utilization tracing and linked-list debug checks
++# CONFIG_DEBUG_STACK_USAGE is not set
++# CONFIG_DEBUG_LIST is not set
++
+-- 
+2.56.0
+

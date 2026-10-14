@@ -1,7 +1,7 @@
 From 5cda17ecc867194fe6ea88d2a0301a70c9bbc849 Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Sun, 11 Oct 2026 16:11:43 +0300
-Subject: [PATCH 7/8] ARM: dts: yupik-gpu: Tune GPU frequencies and voltages
+Subject: [PATCH 7/9] ARM: dts: yupik-gpu: Tune GPU frequencies and voltages
  for speed-bin 117 (180-563 MHz)
 
 Apply proven 180-563 MHz profile matching KonaBess configuration:

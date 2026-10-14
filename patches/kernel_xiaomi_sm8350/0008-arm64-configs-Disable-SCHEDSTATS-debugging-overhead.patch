@@ -1,7 +1,7 @@
 From 8c8773dd6e787488ab1e07f8156c93b838711cf8 Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Sun, 11 Oct 2026 18:01:04 +0300
-Subject: [PATCH 8/8] arm64: configs: Disable SCHEDSTATS debugging overhead
+Subject: [PATCH 8/9] arm64: configs: Disable SCHEDSTATS debugging overhead
 
 atrace.rc force-enables sched_schedstats at boot (on late-init:
 write /proc/sys/kernel/sched_schedstats 1), so CONFIG_SCHEDSTATS=y
