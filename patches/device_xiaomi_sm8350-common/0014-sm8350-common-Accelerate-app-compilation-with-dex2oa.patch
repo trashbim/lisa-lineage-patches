@@ -1,7 +1,7 @@
 From 3e385c90eb43b6f0363a0b8738b3b69cb4067783 Mon Sep 17 00:00:00 2001
 From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
 Date: Thu, 15 Oct 2026 01:21:01 +0300
-Subject: [PATCH 14/16] sm8350-common: Accelerate app compilation with dex2oat
+Subject: [PATCH 14/17] sm8350-common: Accelerate app compilation with dex2oat
  on 8-core CPU
 
 Set boot-dex2oat-threads and image-dex2oat-threads to 8, and runtime

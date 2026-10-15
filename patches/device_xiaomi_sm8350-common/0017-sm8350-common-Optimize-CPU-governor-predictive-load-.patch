@@ -1,0 +1,139 @@
+From ae885f29090b538426eb15f3b791f034d87a6269 Mon Sep 17 00:00:00 2001
+From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
+Date: Thu, 15 Oct 2026 09:21:03 +0300
+Subject: [PATCH 17/17] sm8350-common: Optimize CPU governor predictive load,
+ disable mlid, and tune ART concurrency
+
+- Enable predictive load (pl=1) across all CPU clusters on Yupik (SM7325)
+  and set RTG boost frequency floor to 1.11 GHz for Gold/Prime cores
+- Disable background modem logging service (mlid) and strip verbose -l
+  logging from cnss-daemon to eliminate logcat and IPC spam
+- Restore Zero Shutter Lag in camera by removing camera.disable_zsl_mode=true
+- Remove obsolete CDMA telephony properties and unused IFAAService package
+- Increase background dexopt concurrency to 2 on 8-core CPU
+- Disable GWP-ASan sampling to eliminate native malloc wrapper indirection
+
+Change-Id: I867e6af01fe9e5c4b178b9881245a0a355da9ca3
+---
+ common.mk                                  |  3 ---
+ rootdir/bin/init.kernel.post_boot-yupik.sh | 10 +++++-----
+ rootdir/etc/init.qcom.rc                   |  3 ++-
+ vendor.prop                                | 11 ++++-------
+ 4 files changed, 11 insertions(+), 16 deletions(-)
+
+diff --git a/common.mk b/common.mk
+index 31561e9..d48ebca 100644
+--- a/common.mk
++++ b/common.mk
+@@ -246,9 +246,6 @@ PRODUCT_COPY_FILES += \
+     $(LOCAL_PATH)/rootdir/bin/init.qcom.sh:$(TARGET_COPY_OUT_VENDOR)/bin/init.qcom.sh \
+     $(LOCAL_PATH)/rootdir/bin/vendor_modprobe.sh:$(TARGET_COPY_OUT_VENDOR)/bin/vendor_modprobe.sh
+ 
+-# IFAA manager
+-PRODUCT_PACKAGES += \
+-     IFAAService
+ 
+ # IPACM
+ PRODUCT_PACKAGES += \
+diff --git a/rootdir/bin/init.kernel.post_boot-yupik.sh b/rootdir/bin/init.kernel.post_boot-yupik.sh
+index ec718aa..b91e7a6 100755
+--- a/rootdir/bin/init.kernel.post_boot-yupik.sh
++++ b/rootdir/bin/init.kernel.post_boot-yupik.sh
+@@ -180,7 +180,7 @@ echo 20000 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/down_rate_limit_u
+ echo 0 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/up_rate_limit_us
+ echo 1152000 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/hispeed_freq
+ echo 691200 > /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
+-echo 0 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/pl
++echo 1 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/pl
+ 
+ # configure governor settings for gold cluster
+ echo "schedutil" > /sys/devices/system/cpu/cpufreq/policy4/scaling_governor
+@@ -192,8 +192,8 @@ echo 80 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/hispeed_load
+ echo 0 > /sys/devices/system/cpu/cpu4/sched_load_boost
+ echo 0 > /sys/devices/system/cpu/cpu5/sched_load_boost
+ echo 0 > /sys/devices/system/cpu/cpu6/sched_load_boost
+-echo 0 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/rtg_boost_freq
+-echo 0 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/pl
++echo 1113600 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/rtg_boost_freq
++echo 1 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/pl
+ 
+ # configure governor settings for gold+ cluster
+ echo "schedutil" > /sys/devices/system/cpu/cpufreq/policy7/scaling_governor
+@@ -203,8 +203,8 @@ echo 1324800 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/hispeed_freq
+ echo 806400 > /sys/devices/system/cpu/cpufreq/policy7/scaling_min_freq
+ echo 80 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/hispeed_load
+ echo 0 > /sys/devices/system/cpu/cpu7/sched_load_boost
+-echo 0 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/rtg_boost_freq
+-echo 0 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/pl
++echo 1113600 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/rtg_boost_freq
++echo 1 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/pl
+ 
+ # colocation V3 settings
+ echo 691200 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/rtg_boost_freq
+diff --git a/rootdir/etc/init.qcom.rc b/rootdir/etc/init.qcom.rc
+index a5242f0..57be6d1 100644
+--- a/rootdir/etc/init.qcom.rc
++++ b/rootdir/etc/init.qcom.rc
+@@ -247,7 +247,7 @@ service irsc_util /vendor/bin/irsc_util "/vendor/etc/sec_config"
+     user root
+     oneshot
+ 
+-service cnss-daemon /system/vendor/bin/cnss-daemon -n -l
++service cnss-daemon /system/vendor/bin/cnss-daemon -n
+     class late_start
+     user system
+     group system inet net_admin wifi
+@@ -268,6 +268,7 @@ service mlid /vendor/bin/mlid
+     user gps
+     group gps
+     socket mlid stream 0666 gps gps
++    disabled
+ 
+ service loc_launcher /system/vendor/bin/loc_launcher
+     class late_start
+diff --git a/vendor.prop b/vendor.prop
+index 9a4e6b5..1fb1b7c 100644
+--- a/vendor.prop
++++ b/vendor.prop
+@@ -145,7 +145,6 @@ persist.vendor.qcom.bluetooth.twsp_state.enabled=false
+ ro.bluetooth.a2dp_offload.supported=true
+ 
+ # Camera
+-camera.disable_zsl_mode=true
+ ro.hardware.camera=xiaomi
+ 
+ # Chipset
+@@ -248,11 +247,9 @@ persist.vendor.radio.procedure_bytes=SKIP
+ persist.vendor.radio.rat_on=combine
+ persist.vendor.radio.sib16_support=1
+ ro.telephony.call_ring.multiple=false
+-ro.telephony.default_cdma_sub=0
+ ro.telephony.default_network=26,26
+ ro.vendor.radio.5g=3
+ ro.vendor.use_data_netmgrd=true
+-telephony.lteOnCdmaDevice=1
+ 
+ # Sensors
+ persist.vendor.sensors.allow_non_default_discovery=true
+@@ -308,6 +305,7 @@ dalvik.vm.image-dex2oat-threads=8
+ 
+ # ART / Dexopt: Compile apps ahead-of-time to native machine code in background
+ pm.dexopt.bg-dexopt=speed
++pm.dexopt.bg-dexopt.concurrency=2
+ 
+ # HWUI / ADPF: Enable HintManager for frame deadline tracking and dynamic boost
+ debug.hwui.use_hint_manager=true
+@@ -317,7 +315,6 @@ debug.hwui.target_cpu_time_percent=70
+ ro.lmk.kill_heaviest_task=true
+ ro.lmk.swap_util_max=90
+ 
+-
+-
+-
+-
++# Bionic / Scudo: Disable GWP-ASan sampling in production to eliminate malloc wrapper overhead
++persist.libc.debug.gwp_asan.process_sampling.system_default=0
++persist.libc.debug.gwp_asan.process_sampling.app_default=0
+-- 
+2.56.0
+
