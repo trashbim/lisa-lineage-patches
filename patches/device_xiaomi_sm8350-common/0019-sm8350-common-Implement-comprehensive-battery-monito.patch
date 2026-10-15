@@ -1,7 +1,7 @@
 From 6396505e8039dd21dfd2de48089cd21d4152c183 Mon Sep 17 00:00:00 2001
 From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
 Date: Thu, 15 Oct 2026 17:26:07 +0300
-Subject: [PATCH 19/21] sm8350-common: Implement comprehensive battery
+Subject: [PATCH 19/22] sm8350-common: Implement comprehensive battery
  monitoring, charging control, and telemetry logging in XiaomiParts
 
 Change-Id: Ia5067bea6af473516245a45d3aabc85d675ca96e
