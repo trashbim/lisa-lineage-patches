@@ -1,7 +1,7 @@
 From 6e1e3d3b58ca01f5561f23eda2ddd4eca3139c0d Mon Sep 17 00:00:00 2001
 From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
 Date: Thu, 15 Oct 2026 18:40:41 +0300
-Subject: [PATCH 21/23] sm8350-common: Add 1W step watt limit slider, full
+Subject: [PATCH 21/24] sm8350-common: Add 1W step watt limit slider, full
  telemetry, and 1s UI ticker in XiaomiParts
 
 Change-Id: Iefc3acc76715ed488e2c1eb131ae5005de8032c5

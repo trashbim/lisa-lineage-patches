@@ -1,7 +1,7 @@
 From 2f0a7e687f97c5449b90fd0e02f38d8525aea24b Mon Sep 17 00:00:00 2001
 From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
 Date: Thu, 15 Oct 2026 18:49:43 +0300
-Subject: [PATCH 22/23] sm8350-common: Sanitize SharedPreferences and prevent
+Subject: [PATCH 22/24] sm8350-common: Sanitize SharedPreferences and prevent
  ClassCastException in BatterySettingsFragment
 
 Change-Id: I8f952a97b1c62077b8f2fd5e5f0d37680ac326f6

@@ -1,0 +1,85 @@
+From 7ff7400478b389e62b48410a77221a8b15bc1d61 Mon Sep 17 00:00:00 2001
+From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
+Date: Thu, 15 Oct 2026 19:32:09 +0300
+Subject: [PATCH 24/24] sm8350-common: Support 1W to 33W range for low-power
+ and overnight charging
+
+Change-Id: I6ddadf20c807eafd040e3fd0ed1009ae4b6a3939
+---
+ parts/res/xml/battery_settings.xml                        | 2 +-
+ .../settings/device/battery/BatterySettingsFragment.java  | 8 ++++++--
+ .../settings/device/battery/ChargingControlManager.java   | 6 +++---
+ 3 files changed, 10 insertions(+), 6 deletions(-)
+
+diff --git a/parts/res/xml/battery_settings.xml b/parts/res/xml/battery_settings.xml
+index ded40bf..17a6979 100644
+--- a/parts/res/xml/battery_settings.xml
++++ b/parts/res/xml/battery_settings.xml
+@@ -77,7 +77,7 @@
+         <SeekBarPreference
+             android:key="pref_charge_watt_limit"
+             android:title="@string/charge_watt_limit_title"
+-            app:min="5"
++            app:min="1"
+             android:max="33"
+             android:defaultValue="33"
+             app:seekBarIncrement="1"
+diff --git a/parts/src/org/lineageos/settings/device/battery/BatterySettingsFragment.java b/parts/src/org/lineageos/settings/device/battery/BatterySettingsFragment.java
+index a42a337..f04de2b 100644
+--- a/parts/src/org/lineageos/settings/device/battery/BatterySettingsFragment.java
++++ b/parts/src/org/lineageos/settings/device/battery/BatterySettingsFragment.java
+@@ -90,7 +90,7 @@ public class BatterySettingsFragment extends SettingsBasePreferenceFragment
+                         }
+                     } else if (val instanceof Integer) {
+                         int intVal = (Integer) val;
+-                        if (ChargingControlManager.PREF_CHARGE_WATT_LIMIT.equals(key) && (intVal < 5 || intVal > 33)) {
++                        if (ChargingControlManager.PREF_CHARGE_WATT_LIMIT.equals(key) && (intVal < 1 || intVal > 33)) {
+                             if (editor == null) {
+                                 editor = sp.edit();
+                             }
+@@ -178,7 +178,11 @@ public class BatterySettingsFragment extends SettingsBasePreferenceFragment
+             mWattLimitPref.setSummary("Без ограничений (33 Вт Турбо 🚀)");
+         } else {
+             long targetCurrentMa = (long) ((watts / 4.0) * 1000);
+-            mWattLimitPref.setSummary(String.format(Locale.US, "%d Вт (~%d мА)", watts, targetCurrentMa));
++            if (watts <= 3) {
++                mWattLimitPref.setSummary(String.format(Locale.US, "%d Вт (~%d мА, Ночной тихий режим 🌙)", watts, targetCurrentMa));
++            } else {
++                mWattLimitPref.setSummary(String.format(Locale.US, "%d Вт (~%d мА)", watts, targetCurrentMa));
++            }
+         }
+     }
+ 
+diff --git a/parts/src/org/lineageos/settings/device/battery/ChargingControlManager.java b/parts/src/org/lineageos/settings/device/battery/ChargingControlManager.java
+index e96e5cf..70053a1 100644
+--- a/parts/src/org/lineageos/settings/device/battery/ChargingControlManager.java
++++ b/parts/src/org/lineageos/settings/device/battery/ChargingControlManager.java
+@@ -96,14 +96,14 @@ public final class ChargingControlManager {
+                 watts = 33;
+             }
+         }
+-        if (watts < 5 || watts > 33) {
++        if (watts < 1 || watts > 33) {
+             watts = 33;
+         }
+         return watts;
+     }
+ 
+     public static void setWattLimit(Context context, int watts) {
+-        if (watts < 5 || watts > 33) {
++        if (watts < 1 || watts > 33) {
+             watts = 33;
+         }
+         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+@@ -112,7 +112,7 @@ public final class ChargingControlManager {
+     }
+ 
+     public static void applyWattLimit(int watts) {
+-        if (watts < 5 || watts >= 33) {
++        if (watts < 1 || watts >= 33) {
+             // Unrestricted (Full 33W Mi Turbo Charge)
+             if (FileUtils.fileExists(NODE_CONSTANT_CHARGE_CURRENT)) {
+                 FileUtils.writeLine(NODE_CONSTANT_CHARGE_CURRENT, String.valueOf(DEFAULT_MAX_FCC_UA));
+-- 
+2.56.0
+
