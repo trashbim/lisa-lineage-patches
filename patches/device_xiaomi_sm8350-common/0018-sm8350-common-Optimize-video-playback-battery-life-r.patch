@@ -1,0 +1,175 @@
+From b81cfc971f7fa5159fed8f731bd21fd1af4a6cfa Mon Sep 17 00:00:00 2001
+From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
+Date: Thu, 15 Oct 2026 14:30:29 +0300
+Subject: [PATCH 18/18] sm8350-common: Optimize video playback battery life,
+ restore core_ctl, and enable SF idle timer
+
+- Restore core_ctl dynamic core isolation (allow cpu7 Prime core and cpu4
+  to power off during light video playback and reading)
+- Balance scheduler up/down migration thresholds (71/95 up, 65/85 down)
+- Reset rtg_boost_freq to 0 on all clusters so video decoders do not lock
+  Cortex-A78 cores to 1.11 GHz
+- Fix SurfaceFlinger trapped in system-background (0-3) by assigning
+  SFMainPolicy and SFRenderEnginePolicy to root cpuset in task_profiles.json
+- Increase watermark_scale_factor to 20 to eliminate kswapd direct reclaim
+  stalls and OOM-reaper thrashing
+- Set display set_idle_timer_ms to 1000ms so display drops to 60Hz during
+  static content and video playback
+
+Change-Id: I1f5e05d3a5e96ff53e34ade3d40022595b76642f
+---
+ configs/task_profiles.json                 | 26 +++++++++++++
+ rootdir/bin/init.kernel.post_boot-yupik.sh | 45 ++++++++++++----------
+ vendor.prop                                |  3 +-
+ 3 files changed, 53 insertions(+), 21 deletions(-)
+
+diff --git a/configs/task_profiles.json b/configs/task_profiles.json
+index 9d4df1e..4b20b41 100644
+--- a/configs/task_profiles.json
++++ b/configs/task_profiles.json
+@@ -551,6 +551,32 @@
+           }
+         }
+       ]
++    },
++    {
++      "Name": "SFMainPolicy",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "cpuset",
++            "Path": ""
++          }
++        }
++      ]
++    },
++    {
++      "Name": "SFRenderEnginePolicy",
++      "Actions": [
++        {
++          "Name": "JoinCgroup",
++          "Params":
++          {
++            "Controller": "cpuset",
++            "Path": ""
++          }
++        }
++      ]
+     }
+   ],
+ 
+diff --git a/rootdir/bin/init.kernel.post_boot-yupik.sh b/rootdir/bin/init.kernel.post_boot-yupik.sh
+index b91e7a6..71e1559 100755
+--- a/rootdir/bin/init.kernel.post_boot-yupik.sh
++++ b/rootdir/bin/init.kernel.post_boot-yupik.sh
+@@ -112,18 +112,13 @@ function configure_memory_parameters() {
+ 	echo 10 > /proc/sys/vm/stat_interval
+ 	echo 60 > /proc/sys/vm/vfs_cache_pressure
+ 
+-        # Disable wsf  beacause we are using efk.
+-        # wsf Range : 1..1000. So set to bare minimum value 1.
+-        echo 1 > /proc/sys/vm/watermark_scale_factor
++        echo 20 > /proc/sys/vm/watermark_scale_factor
+ 
+ 	MemTotalStr=`cat /proc/meminfo | grep MemTotal`
+ 	MemTotal=${MemTotalStr:16:8}
+ 	if [ $MemTotal -le 8388608 ]; then
+ 		echo 0 > /proc/sys/vm/watermark_boost_factor
+ 	fi
+-
+-	#Spawn 2 kswapd threads which can help in fast reclaiming of pages
+-	echo 2 > /proc/sys/vm/kswapd_threads
+ }
+ 
+ rev=`cat /sys/devices/soc0/revision`
+@@ -132,19 +127,29 @@ ddr_type4="07"
+ ddr_type5="08"
+ 
+ # Core control parameters for gold
+-# Disable core control isolation on all clusters so all 8 cores remain active
+-echo 0 0 0 > /sys/devices/system/cpu/cpu4/core_ctl/not_preferred
+-echo 3 > /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
+-echo 0 > /sys/devices/system/cpu/cpu4/core_ctl/enable
+-echo 1 > /sys/devices/system/cpu/cpu7/core_ctl/min_cpus
+-echo 0 > /sys/devices/system/cpu/cpu7/core_ctl/enable
++echo 1 0 0 > /sys/devices/system/cpu/cpu4/core_ctl/not_preferred
++echo 2 > /sys/devices/system/cpu/cpu4/core_ctl/min_cpus
++echo 60 > /sys/devices/system/cpu/cpu4/core_ctl/busy_up_thres
++echo 30 > /sys/devices/system/cpu/cpu4/core_ctl/busy_down_thres
++echo 100 > /sys/devices/system/cpu/cpu4/core_ctl/offline_delay_ms
++echo 3 > /sys/devices/system/cpu/cpu4/core_ctl/task_thres
++
++# Core control parameters for gold+
++echo 0 > /sys/devices/system/cpu/cpu7/core_ctl/min_cpus
++echo 60 > /sys/devices/system/cpu/cpu7/core_ctl/busy_up_thres
++echo 30 > /sys/devices/system/cpu/cpu7/core_ctl/busy_down_thres
++echo 100 > /sys/devices/system/cpu/cpu7/core_ctl/offline_delay_ms
++echo 1 > /sys/devices/system/cpu/cpu7/core_ctl/task_thres
++echo 1 > /sys/devices/system/cpu/cpu7/core_ctl/nr_prev_assist_thresh
++
++# Disable Core control on silver
+ echo 0 > /sys/devices/system/cpu/cpu0/core_ctl/enable
+ 
+ # Setting b.L scheduler parameters
+-echo 65 85 > /proc/sys/kernel/sched_upmigrate
+-echo 55 75 > /proc/sys/kernel/sched_downmigrate
+-echo 85 > /proc/sys/kernel/sched_group_upmigrate
+-echo 70 > /proc/sys/kernel/sched_group_downmigrate
++echo 71 95 > /proc/sys/kernel/sched_upmigrate
++echo 65 85 > /proc/sys/kernel/sched_downmigrate
++echo 100 > /proc/sys/kernel/sched_group_upmigrate
++echo 85 > /proc/sys/kernel/sched_group_downmigrate
+ echo 1 > /proc/sys/kernel/sched_walt_rotate_big_tasks
+ 
+ echo 0 > /proc/sys/kernel/sched_coloc_busy_hysteresis_enable_cpus
+@@ -180,7 +185,7 @@ echo 20000 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/down_rate_limit_u
+ echo 0 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/up_rate_limit_us
+ echo 1152000 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/hispeed_freq
+ echo 691200 > /sys/devices/system/cpu/cpufreq/policy0/scaling_min_freq
+-echo 1 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/pl
++echo 0 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/pl
+ 
+ # configure governor settings for gold cluster
+ echo "schedutil" > /sys/devices/system/cpu/cpufreq/policy4/scaling_governor
+@@ -192,7 +197,7 @@ echo 80 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/hispeed_load
+ echo 0 > /sys/devices/system/cpu/cpu4/sched_load_boost
+ echo 0 > /sys/devices/system/cpu/cpu5/sched_load_boost
+ echo 0 > /sys/devices/system/cpu/cpu6/sched_load_boost
+-echo 1113600 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/rtg_boost_freq
++echo 0 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/rtg_boost_freq
+ echo 1 > /sys/devices/system/cpu/cpufreq/policy4/schedutil/pl
+ 
+ # configure governor settings for gold+ cluster
+@@ -203,11 +208,11 @@ echo 1324800 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/hispeed_freq
+ echo 806400 > /sys/devices/system/cpu/cpufreq/policy7/scaling_min_freq
+ echo 80 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/hispeed_load
+ echo 0 > /sys/devices/system/cpu/cpu7/sched_load_boost
+-echo 1113600 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/rtg_boost_freq
++echo 0 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/rtg_boost_freq
+ echo 1 > /sys/devices/system/cpu/cpufreq/policy7/schedutil/pl
+ 
+ # colocation V3 settings
+-echo 691200 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/rtg_boost_freq
++echo 0 > /sys/devices/system/cpu/cpufreq/policy0/schedutil/rtg_boost_freq
+ echo 51 > /proc/sys/kernel/sched_min_task_util_for_boost
+ echo 35 > /proc/sys/kernel/sched_min_task_util_for_colocation
+ echo 20000000 > /proc/sys/kernel/sched_task_unfilter_period
+diff --git a/vendor.prop b/vendor.prop
+index 1fb1b7c..8d3d501 100644
+--- a/vendor.prop
++++ b/vendor.prop
+@@ -180,7 +180,8 @@ debug.sf.high_fps_late_app_phase_offset_ns=1000000
+ debug.sf.high_fps_late_sf_phase_offset_ns=-4000000
+ debug.sf.latch_unsignaled=1
+ debug.sf.auto_latch_unsignaled=true
+-debug.sf.set_idle_timer_ms=0
++debug.sf.set_idle_timer_ms=1000
++ro.surface_flinger.set_idle_timer_ms=1000
+ persist.sys.sf.color_mode=0
+ persist.sys.sf.native_mode=258
+ ro.hardware.egl=adreno
+-- 
+2.56.0
+
