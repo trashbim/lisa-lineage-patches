@@ -1,7 +1,7 @@
 From 3f2888059102d88905caa6e598853d6c92adfd23 Mon Sep 17 00:00:00 2001
 From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
 Date: Thu, 15 Oct 2026 18:19:28 +0300
-Subject: [PATCH 20/24] sm8350-common: Fix ListPreference casting and add
+Subject: [PATCH 20/25] sm8350-common: Fix ListPreference casting and add
  LAUNCHER intent filter in XiaomiParts
 
 Change-Id: Ida2c547d0db15c2e785b1b710f7fe2d4c497cd5a
