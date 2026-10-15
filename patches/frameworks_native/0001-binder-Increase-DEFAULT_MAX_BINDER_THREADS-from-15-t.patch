@@ -1,0 +1,30 @@
+From 82fa7eba30b440c2f4c240be6d470f1095a70553 Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Thu, 15 Oct 2026 08:55:38 +0300
+Subject: [PATCH] binder: Increase DEFAULT_MAX_BINDER_THREADS from 15 to 31
+
+Under heavy multitasking with 8 CPU cores, 15 binder worker threads
+can become exhausted in system_server, resulting in queue wait latency
+for incoming IPC calls. Double thread pool to 31 to eliminate IPC stalls.
+
+Change-Id: I9056c07fed72b32272cf9d56fc52f02990971565
+---
+ libs/binder/ProcessState.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libs/binder/ProcessState.cpp b/libs/binder/ProcessState.cpp
+index f7d5347..0afa6c4 100644
+--- a/libs/binder/ProcessState.cpp
++++ b/libs/binder/ProcessState.cpp
+@@ -46,7 +46,7 @@
+ #include <mutex>
+ 
+ #define BINDER_VM_SIZE ((1 * 1024 * 1024) - sysconf(_SC_PAGE_SIZE) * 2)
+-#define DEFAULT_MAX_BINDER_THREADS 15
++#define DEFAULT_MAX_BINDER_THREADS 31
+ #define DEFAULT_ENABLE_ONEWAY_SPAM_DETECTION 1
+ 
+ #if defined(__ANDROID__) || defined(__Fuchsia__)
+-- 
+2.56.0
+

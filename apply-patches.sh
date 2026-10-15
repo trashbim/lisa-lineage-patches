@@ -23,6 +23,7 @@ PROJECTS=(
     "device/xiaomi/lisa:device_xiaomi_lisa"
     "device/xiaomi/sm8350-common:device_xiaomi_sm8350-common"
     "frameworks/base:frameworks_base"
+    "frameworks/native:frameworks_native"
     "kernel/xiaomi/sm8350:kernel_xiaomi_sm8350"
     "packages/apps/Launcher3:packages_apps_Launcher3"
     "packages/apps/Settings:packages_apps_Settings"

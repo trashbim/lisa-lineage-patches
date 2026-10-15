@@ -1,0 +1,60 @@
+From 3fb8a864e4778f74b047ee5c1a164b99501a1b09 Mon Sep 17 00:00:00 2001
+From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
+Date: Thu, 15 Oct 2026 08:56:35 +0300
+Subject: [PATCH 16/16] sm8350-common: Disable conservative_pl, enable async
+ powermode, and configure LMKD anti-thrashing
+
+- Set sched_conservative_pl=0 to allow 100% of predicted CPU load frequency scaling.
+- Enable vendor.display.enable_async_powermode=1 for non-blocking screen wake/sleep.
+- Set ro.lmk.kill_heaviest_task=true and ro.lmk.swap_util_max=90 to eliminate ZRAM
+  thrashing and priority inversion under memory pressure.
+
+Change-Id: I189b88832a7adea79706c0c64db5d9c4b071fb60
+---
+ rootdir/bin/init.kernel.post_boot-yupik.sh | 4 ++--
+ vendor.prop                                | 7 ++++++-
+ 2 files changed, 8 insertions(+), 3 deletions(-)
+
+diff --git a/rootdir/bin/init.kernel.post_boot-yupik.sh b/rootdir/bin/init.kernel.post_boot-yupik.sh
+index 61cfd44..ec718aa 100755
+--- a/rootdir/bin/init.kernel.post_boot-yupik.sh
++++ b/rootdir/bin/init.kernel.post_boot-yupik.sh
+@@ -212,8 +212,8 @@ echo 51 > /proc/sys/kernel/sched_min_task_util_for_boost
+ echo 35 > /proc/sys/kernel/sched_min_task_util_for_colocation
+ echo 20000000 > /proc/sys/kernel/sched_task_unfilter_period
+ 
+-# Enable conservative pl
+-echo 1 > /proc/sys/kernel/sched_conservative_pl
++# Disable conservative pl so full predicted load frequency is granted
++echo 0 > /proc/sys/kernel/sched_conservative_pl
+ 
+ # configure RIMPS for L3 DCVS
+ for c0_rimps_l3 in /sys/devices/system/cpu/memlat/c0_memlat/cpu0-cpu-l3-lat
+diff --git a/vendor.prop b/vendor.prop
+index c39353d..9a4e6b5 100644
+--- a/vendor.prop
++++ b/vendor.prop
+@@ -206,7 +206,7 @@ vendor.display.disable_excl_rect_partial_fb=1
+ vendor.display.disable_hw_recovery_dump=1
+ vendor.display.disable_offline_rotator=1
+ vendor.display.disable_scaler=0
+-vendor.display.enable_async_powermode=0
++vendor.display.enable_async_powermode=1
+ vendor.display.enable_early_wakeup=1
+ vendor.display.enable_optimize_refresh=1
+ vendor.display.enable_perf_hint_large_comp_cycle=1
+@@ -313,6 +313,11 @@ pm.dexopt.bg-dexopt=speed
+ debug.hwui.use_hint_manager=true
+ debug.hwui.target_cpu_time_percent=70
+ 
++# LMKD / Memory: Kill heaviest background task on pressure and prevent ZRAM thrashing
++ro.lmk.kill_heaviest_task=true
++ro.lmk.swap_util_max=90
++
++
+ 
+ 
+ 
+-- 
+2.56.0
+
