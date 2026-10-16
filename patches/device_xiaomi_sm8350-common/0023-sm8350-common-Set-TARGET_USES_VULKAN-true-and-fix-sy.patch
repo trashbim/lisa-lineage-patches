@@ -1,0 +1,53 @@
+From f95a43f9fbbaa1bfd747876c84f619443cb57fba Mon Sep 17 00:00:00 2001
+From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
+Date: Sat, 17 Oct 2026 02:28:51 +0300
+Subject: [PATCH 23/23] sm8350-common: Set TARGET_USES_VULKAN := true and fix
+ sysprop duplicates
+
+- Enable TARGET_USES_VULKAN := true in BoardConfig to generate ro.hwui.use_vulkan=true
+- Deduplicate debug.sf.enable_gl_backpressure and set to 1
+
+Change-Id: I12d03c717632921b1b0c3368bf84e44f64703bf4
+---
+ BoardConfigCommon.mk | 1 +
+ vendor.prop          | 6 ++----
+ 2 files changed, 3 insertions(+), 4 deletions(-)
+
+diff --git a/BoardConfigCommon.mk b/BoardConfigCommon.mk
+index cd8c2c9..96e2613 100644
+--- a/BoardConfigCommon.mk
++++ b/BoardConfigCommon.mk
+@@ -52,6 +52,7 @@ TARGET_NO_BOOTLOADER := true
+ 
+ # Display
+ TARGET_SCREEN_DENSITY ?= 440
++TARGET_USES_VULKAN := true
+ 
+ # Filesystem
+ TARGET_FS_CONFIG_GEN := $(COMMON_PATH)/config.fs
+diff --git a/vendor.prop b/vendor.prop
+index 4921acf..f256ef7 100644
+--- a/vendor.prop
++++ b/vendor.prop
+@@ -173,7 +173,7 @@ persist.sys.fuse.passthrough.enable=true
+ vendor.gatekeeper.disable_spu=true
+ 
+ # Graphics
+-debug.sf.enable_gl_backpressure=0
++debug.sf.enable_gl_backpressure=1
+ debug.sf.high_fps_early_gl_phase_offset_ns=-4000000
+ debug.sf.high_fps_early_phase_offset_ns=-4000000
+ debug.sf.high_fps_late_app_phase_offset_ns=1000000
+@@ -320,8 +320,6 @@ ro.lmk.swap_util_max=90
+ persist.libc.debug.gwp_asan.process_sampling.system_default=0
+ persist.libc.debug.gwp_asan.process_sampling.app_default=0
+ 
+-# Graphics & Rendering: Use Skia Vulkan backend for UI and optimize pipeline
+-ro.hwui.use_vulkan=true
++# Graphics & Rendering: Pipeline optimization
+ renderthread.skia.reduceopstasksplitting=true
+-debug.sf.enable_gl_backpressure=1
+ debug.renderengine.graphite.precompile=true
+-- 
+2.56.0
+
