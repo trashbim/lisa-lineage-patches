@@ -1,7 +1,7 @@
 From 6ae566580ea885bee5dac606fcd419af1d0a92e3 Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Sun, 27 Sep 2026 02:12:45 +0300
-Subject: [PATCH 12/25] sm8350-common: Add XiaomiParts with Bypass Charging
+Subject: [PATCH 12/26] sm8350-common: Add XiaomiParts with Bypass Charging
 
 Change-Id: I3c87d68ca2af38e5f449ca46eb865b6cd5c0316e
 ---
