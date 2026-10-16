@@ -21,6 +21,7 @@ log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 PROJECTS=(
     "bootable/recovery:bootable_recovery"
+    "build/make:build_make"
     "device/xiaomi/lisa:device_xiaomi_lisa"
     "device/xiaomi/sm8350-common:device_xiaomi_sm8350-common"
     "frameworks/base:frameworks_base"

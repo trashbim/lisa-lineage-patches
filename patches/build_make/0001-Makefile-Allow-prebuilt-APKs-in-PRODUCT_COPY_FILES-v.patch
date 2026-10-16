@@ -1,0 +1,32 @@
+From 8161ef7ffee3fca5de78e69e92049452994b7c90 Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Sat, 17 Oct 2026 02:18:55 +0300
+Subject: [PATCH] Makefile: Allow prebuilt APKs in PRODUCT_COPY_FILES via
+ BUILD_BROKEN_PREBUILT_PRODUCT_COPY_FILES
+
+Change-Id: Idd87cba9bd17c367cf0f742666bf0292986b2072
+---
+ core/Makefile | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/core/Makefile b/core/Makefile
+index b8c4189..995e365 100644
+--- a/core/Makefile
++++ b/core/Makefile
+@@ -101,9 +101,10 @@ include $(BUILD_SYSTEM)/packaging/flags.mk
+ #$(1): the src:dest pair
+ #$(2): the dest
+ define check-product-copy-files
+-$(if $(filter-out $(TARGET_COPY_OUT_SYSTEM_OTHER)/%,$(2)), \
+-  $(if $(filter %.apk, $(2)),$(error \
+-     Prebuilt apk found in PRODUCT_COPY_FILES: $(1), use BUILD_PREBUILT instead!))) \
++$(if $(filter true,$(BUILD_BROKEN_PREBUILT_PRODUCT_COPY_FILES)),, \
++  $(if $(filter-out $(TARGET_COPY_OUT_SYSTEM_OTHER)/%,$(2)), \
++    $(if $(filter %.apk, $(2)),$(error \
++       Prebuilt apk found in PRODUCT_COPY_FILES: $(1), use BUILD_PREBUILT instead!)))) \
+ $(if $(filter true,$(BUILD_BROKEN_VINTF_PRODUCT_COPY_FILES)),, \
+   $(if $(filter $(TARGET_COPY_OUT_SYSTEM)/etc/vintf/% \
+                 $(TARGET_COPY_OUT_SYSTEM)/manifest.xml \
+-- 
+2.56.0
+

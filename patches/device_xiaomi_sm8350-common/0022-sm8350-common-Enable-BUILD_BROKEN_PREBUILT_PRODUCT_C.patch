@@ -1,0 +1,27 @@
+From 83e166b3002fd6e2d5ec23e8780670b6d00184ae Mon Sep 17 00:00:00 2001
+From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
+Date: Sat, 17 Oct 2026 02:18:59 +0300
+Subject: [PATCH 22/22] sm8350-common: Enable
+ BUILD_BROKEN_PREBUILT_PRODUCT_COPY_FILES for GApps integration
+
+Change-Id: I7d660d93fb5cc431ce8a0246c99cf4e955225213
+---
+ BoardConfigCommon.mk | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/BoardConfigCommon.mk b/BoardConfigCommon.mk
+index bc661de..cd8c2c9 100644
+--- a/BoardConfigCommon.mk
++++ b/BoardConfigCommon.mk
+@@ -196,5 +196,8 @@ WIFI_HIDL_FEATURE_DUAL_INTERFACE := true
+ WIFI_HIDL_UNIFIED_SUPPLICANT_SERVICE_RC_ENTRY := true
+ WPA_SUPPLICANT_VERSION := VER_0_8_X
+ 
++# Build rules
++BUILD_BROKEN_PREBUILT_PRODUCT_COPY_FILES := true
++
+ # Inherit proprietary blobs
+ include vendor/xiaomi/sm8350-common/BoardConfigVendor.mk
+-- 
+2.56.0
+
