@@ -1,0 +1,1085 @@
+From 08d0dbae56c7f762244d1e60b9352f23a10adece Mon Sep 17 00:00:00 2001
+From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
+Date: Sat, 17 Oct 2026 00:28:48 +0300
+Subject: [PATCH 19/19] parts: Implement safe read-only battery telemetry
+ dashboard
+
+Change-Id: I8cbcfe01e6b33bfe1ae5706d298b8a669920f081
+---
+ parts/AndroidManifest.xml                     |  37 +---
+ parts/res/drawable/ic_battery_dashboard.xml   |  15 ++
+ .../res/drawable/ic_bypass_charging_tile.xml  |  10 -
+ parts/res/values-ru/strings.xml               |  22 +--
+ parts/res/values-uk/strings.xml               |  22 +--
+ parts/res/values/strings.xml                  |  20 +-
+ parts/res/xml/battery_settings.xml            |  39 ++++
+ parts/res/xml/parts_preferences.xml           |  33 +++-
+ .../device/BootCompletedReceiver.java         |  38 ----
+ .../settings/device/PartsActivity.java        |  20 +-
+ .../settings/device/PartsFragment.java        | 156 +++++++++------
+ .../battery/BatterySettingsFragment.java      |  11 ++
+ .../device/battery/BatteryTelemetry.java      | 181 ++++++++++++++++++
+ .../battery/BypassChargingController.java     |  95 ---------
+ .../battery/BypassChargingMonitorService.java |  82 --------
+ .../battery/BypassChargingTileService.java    |  75 --------
+ 16 files changed, 425 insertions(+), 431 deletions(-)
+ create mode 100644 parts/res/drawable/ic_battery_dashboard.xml
+ delete mode 100644 parts/res/drawable/ic_bypass_charging_tile.xml
+ create mode 100644 parts/res/xml/battery_settings.xml
+ delete mode 100644 parts/src/org/lineageos/settings/device/BootCompletedReceiver.java
+ create mode 100644 parts/src/org/lineageos/settings/device/battery/BatterySettingsFragment.java
+ create mode 100644 parts/src/org/lineageos/settings/device/battery/BatteryTelemetry.java
+ delete mode 100644 parts/src/org/lineageos/settings/device/battery/BypassChargingController.java
+ delete mode 100644 parts/src/org/lineageos/settings/device/battery/BypassChargingMonitorService.java
+ delete mode 100644 parts/src/org/lineageos/settings/device/battery/BypassChargingTileService.java
+
+diff --git a/parts/AndroidManifest.xml b/parts/AndroidManifest.xml
+index 7ac0316..b044d81 100644
+--- a/parts/AndroidManifest.xml
++++ b/parts/AndroidManifest.xml
+@@ -9,9 +9,6 @@
+     android:versionCode="1"
+     android:versionName="1.0">
+ 
+-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+-    <uses-permission android:name="android.permission.WAKE_LOCK" />
+-
+     <application
+         android:label="@string/parts_title"
+         android:icon="@drawable/ic_settings_parts"
+@@ -25,10 +22,13 @@
+             android:name=".PartsActivity"
+             android:label="@string/parts_title"
+             android:exported="true">
++            <intent-filter>
++                <action android:name="android.intent.action.MAIN" />
++                <category android:name="android.intent.category.LAUNCHER" />
++            </intent-filter>
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+                 <action android:name="com.android.settings.action.IA_SETTINGS" />
+-                <action android:name="android.service.quicksettings.action.QS_TILE_PREFERENCES" />
+                 <category android:name="android.intent.category.DEFAULT" />
+             </intent-filter>
+             <meta-data
+@@ -45,34 +45,5 @@
+                 android:resource="@string/parts_summary" />
+         </activity>
+ 
+-        <!-- Quick Settings Tiles -->
+-        <service
+-            android:name=".battery.BypassChargingTileService"
+-            android:icon="@drawable/ic_bypass_charging_tile"
+-            android:label="@string/bypass_charging_tile_title"
+-            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"
+-            android:exported="true">
+-            <intent-filter>
+-                <action android:name="android.service.quicksettings.action.QS_TILE" />
+-            </intent-filter>
+-            <meta-data
+-                android:name="android.service.quicksettings.TOGGLEABLE_TILE"
+-                android:value="true" />
+-        </service>
+-
+-        <!-- Background Monitor Services for Safety Guards -->
+-        <service
+-            android:name=".battery.BypassChargingMonitorService"
+-            android:exported="false" />
+-
+-        <!-- Boot Completed Receiver -->
+-        <receiver
+-            android:name=".BootCompletedReceiver"
+-            android:exported="true">
+-            <intent-filter>
+-                <action android:name="android.intent.action.BOOT_COMPLETED" />
+-            </intent-filter>
+-        </receiver>
+-
+     </application>
+ </manifest>
+diff --git a/parts/res/drawable/ic_battery_dashboard.xml b/parts/res/drawable/ic_battery_dashboard.xml
+new file mode 100644
+index 0000000..0f5f573
+--- /dev/null
++++ b/parts/res/drawable/ic_battery_dashboard.xml
+@@ -0,0 +1,15 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++     SPDX-FileCopyrightText: The LineageOS Project
++     SPDX-License-Identifier: Apache-2.0
++-->
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    android:width="24dp"
++    android:height="24dp"
++    android:viewportWidth="24"
++    android:viewportHeight="24"
++    android:tint="?android:attr/colorControlNormal">
++    <path
++        android:fillColor="@android:color/white"
++        android:pathData="M15.67,4H14V2h-4v2H8.33C7.6,4 7,4.6 7,5.33v15.33C7,21.4 7.6,22 8.33,22h7.33c0.74,0 1.34,-0.6 1.34,-1.33V5.33C17,4.6 16.4,4 15.67,4zM11,20v-5.5H9L13,7v5.5h2L11,20z"/>
++</vector>
+diff --git a/parts/res/drawable/ic_bypass_charging_tile.xml b/parts/res/drawable/ic_bypass_charging_tile.xml
+deleted file mode 100644
+index 68a71fa..0000000
+--- a/parts/res/drawable/ic_bypass_charging_tile.xml
++++ /dev/null
+@@ -1,10 +0,0 @@
+-<vector xmlns:android="http://schemas.android.com/apk/res/android"
+-    android:width="24dp"
+-    android:height="24dp"
+-    android:viewportWidth="24"
+-    android:viewportHeight="24"
+-    android:tint="?android:attr/colorControlNormal">
+-    <path
+-        android:fillColor="#FFFFFFFF"
+-        android:pathData="M16,7V3h-2v4h-4V3H8v4H6c-1.1,0 -2,0.9 -2,2v5c0,2.97 2.16,5.43 5,5.91V21h6v-1.09c2.84,-0.48 5,-2.94 5,-5.91V9c0,-1.1 -0.9,-2 -2,-2h-2z" />
+-</vector>
+diff --git a/parts/res/values-ru/strings.xml b/parts/res/values-ru/strings.xml
+index 94fbfe2..b52fc96 100644
+--- a/parts/res/values-ru/strings.xml
++++ b/parts/res/values-ru/strings.xml
+@@ -6,18 +6,18 @@
+ <resources>
+     <!-- Main -->
+     <string name="parts_title">Настройки Xiaomi</string>
+-    <string name="parts_summary">Дополнительные функции устройства и питания</string>
++    <string name="parts_summary">Дополнительные параметры устройства и телеметрия аккумулятора</string>
+ 
+     <!-- Categories -->
+-    <string name="category_battery">Батарея</string>
++    <string name="category_battery">Аккумулятор</string>
++    <string name="battery_telemetry_title">Мониторинг батареи</string>
++    <string name="battery_telemetry_summary">Мощность в реальном времени, протокол Type-C, температура и циклы</string>
+ 
+-    <!-- Bypass Charging -->
+-    <string name="bypass_charging_title">Сквозная зарядка</string>
+-    <string name="bypass_charging_summary">Питание устройства напрямую от сети без зарядки аккумулятора. Снижает нагрев и износ батареи в играх и навигации. Автоматически отключается при отключении кабеля.</string>
+-    <string name="bypass_charging_tile_title">Сквозная зарядка</string>
+-    <string name="bypass_charging_connect_charger_toast">Подключите зарядное устройство для включения сквозной зарядки</string>
+-
+-    <!-- Tile States -->
+-    <string name="tile_state_on">Вкл</string>
+-    <string name="tile_state_off">Выкл</string>
++    <!-- Live Telemetry Category -->
++    <string name="category_live_telemetry">Текущие показатели</string>
++    <string name="telemetry_power_title">Мощность и ток</string>
++    <string name="telemetry_usb_title">Порт и протокол Type-C</string>
++    <string name="telemetry_battery_title">Температура и здоровье</string>
++    <string name="telemetry_specs_title">Ёмкость и характеристики</string>
++    <string name="telemetry_loading">Получение данных с датчиков…</string>
+ </resources>
+diff --git a/parts/res/values-uk/strings.xml b/parts/res/values-uk/strings.xml
+index 6b693f9..3b2a5e5 100644
+--- a/parts/res/values-uk/strings.xml
++++ b/parts/res/values-uk/strings.xml
+@@ -6,18 +6,18 @@
+ <resources>
+     <!-- Main -->
+     <string name="parts_title">Налаштування Xiaomi</string>
+-    <string name="parts_summary">Додаткові функції пристрою та живлення</string>
++    <string name="parts_summary">Додаткові параметри пристрою та телеметрія акумулятора</string>
+ 
+     <!-- Categories -->
+-    <string name="category_battery">Батарея</string>
++    <string name="category_battery">Акумулятор</string>
++    <string name="battery_telemetry_title">Моніторинг батареї</string>
++    <string name="battery_telemetry_summary">Потужність у реальному часі, протокол Type-C, температура та цикли</string>
+ 
+-    <!-- Bypass Charging -->
+-    <string name="bypass_charging_title">Наскрізне живлення</string>
+-    <string name="bypass_charging_summary">Живлення пристрою безпосередньо від мережі без заряджання акумулятора. Знижує нагрівання та знос батареї в іграх і навігації. Автоматично вимикається при від\'єднанні кабелю.</string>
+-    <string name="bypass_charging_tile_title">Наскрізне живлення</string>
+-    <string name="bypass_charging_connect_charger_toast">Підключіть зарядний пристрій для увімкнення наскрізного живлення</string>
+-
+-    <!-- Tile States -->
+-    <string name="tile_state_on">Увімк</string>
+-    <string name="tile_state_off">Вимк</string>
++    <!-- Live Telemetry Category -->
++    <string name="category_live_telemetry">Поточні показники</string>
++    <string name="telemetry_power_title">Потужність і струм</string>
++    <string name="telemetry_usb_title">Порт і протокол Type-C</string>
++    <string name="telemetry_battery_title">Температура та стан</string>
++    <string name="telemetry_specs_title">Ємність та характеристики</string>
++    <string name="telemetry_loading">Отримання даних з датчиків…</string>
+ </resources>
+diff --git a/parts/res/values/strings.xml b/parts/res/values/strings.xml
+index 8dd4b6f..65ba7f7 100644
+--- a/parts/res/values/strings.xml
++++ b/parts/res/values/strings.xml
+@@ -6,18 +6,18 @@
+ <resources>
+     <!-- Main -->
+     <string name="parts_title">Xiaomi Parts</string>
+-    <string name="parts_summary">Additional device features and battery settings</string>
++    <string name="parts_summary">Additional device features and battery telemetry</string>
+ 
+     <!-- Categories -->
+     <string name="category_battery">Battery</string>
++    <string name="battery_telemetry_title">Battery Telemetry</string>
++    <string name="battery_telemetry_summary">Live power, current, Type-C protocol, temperature and cycles</string>
+ 
+-    <!-- Bypass Charging -->
+-    <string name="bypass_charging_title">Bypass Charging</string>
+-    <string name="bypass_charging_summary">Power the device directly from the charger without charging the battery. Reduces heat during gaming and navigation. Automatically resets when disconnected.</string>
+-    <string name="bypass_charging_tile_title">Bypass Charge</string>
+-    <string name="bypass_charging_connect_charger_toast">Connect charger first to enable bypass charging</string>
+-
+-    <!-- Tile States -->
+-    <string name="tile_state_on">On</string>
+-    <string name="tile_state_off">Off</string>
++    <!-- Live Telemetry Category -->
++    <string name="category_live_telemetry">Live Telemetry</string>
++    <string name="telemetry_power_title">Power &amp; Current</string>
++    <string name="telemetry_usb_title">Port &amp; Protocol</string>
++    <string name="telemetry_battery_title">Temperature &amp; Health</string>
++    <string name="telemetry_specs_title">Capacity &amp; Specs</string>
++    <string name="telemetry_loading">Reading sensor data…</string>
+ </resources>
+diff --git a/parts/res/xml/battery_settings.xml b/parts/res/xml/battery_settings.xml
+new file mode 100644
+index 0000000..5a6fa49
+--- /dev/null
++++ b/parts/res/xml/battery_settings.xml
+@@ -0,0 +1,39 @@
++<?xml version="1.0" encoding="utf-8"?>
++<!--
++     SPDX-FileCopyrightText: The LineageOS Project
++     SPDX-License-Identifier: Apache-2.0
++-->
++<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:app="http://schemas.android.com/apk/res-auto">
++
++    <PreferenceCategory
++        android:key="category_live_telemetry"
++        android:title="@string/category_live_telemetry">
++
++        <Preference
++            android:key="pref_telemetry_power"
++            android:title="@string/telemetry_power_title"
++            android:summary="@string/telemetry_loading"
++            android:selectable="false" />
++
++        <Preference
++            android:key="pref_telemetry_usb"
++            android:title="@string/telemetry_usb_title"
++            android:summary="@string/telemetry_loading"
++            android:selectable="false" />
++
++        <Preference
++            android:key="pref_telemetry_battery"
++            android:title="@string/telemetry_battery_title"
++            android:summary="@string/telemetry_loading"
++            android:selectable="false" />
++
++        <Preference
++            android:key="pref_telemetry_specs"
++            android:title="@string/telemetry_specs_title"
++            android:summary="@string/telemetry_loading"
++            android:selectable="false" />
++
++    </PreferenceCategory>
++
++</PreferenceScreen>
+diff --git a/parts/res/xml/parts_preferences.xml b/parts/res/xml/parts_preferences.xml
+index e673b79..5a6fa49 100644
+--- a/parts/res/xml/parts_preferences.xml
++++ b/parts/res/xml/parts_preferences.xml
+@@ -7,15 +7,32 @@
+     xmlns:app="http://schemas.android.com/apk/res-auto">
+ 
+     <PreferenceCategory
+-        android:key="category_battery"
+-        android:title="@string/category_battery">
++        android:key="category_live_telemetry"
++        android:title="@string/category_live_telemetry">
+ 
+-        <SwitchPreferenceCompat
+-            android:key="pref_bypass_charging"
+-            android:title="@string/bypass_charging_title"
+-            android:summary="@string/bypass_charging_summary"
+-            android:icon="@drawable/ic_bypass_charging_tile"
+-            android:defaultValue="false" />
++        <Preference
++            android:key="pref_telemetry_power"
++            android:title="@string/telemetry_power_title"
++            android:summary="@string/telemetry_loading"
++            android:selectable="false" />
++
++        <Preference
++            android:key="pref_telemetry_usb"
++            android:title="@string/telemetry_usb_title"
++            android:summary="@string/telemetry_loading"
++            android:selectable="false" />
++
++        <Preference
++            android:key="pref_telemetry_battery"
++            android:title="@string/telemetry_battery_title"
++            android:summary="@string/telemetry_loading"
++            android:selectable="false" />
++
++        <Preference
++            android:key="pref_telemetry_specs"
++            android:title="@string/telemetry_specs_title"
++            android:summary="@string/telemetry_loading"
++            android:selectable="false" />
+ 
+     </PreferenceCategory>
+ 
+diff --git a/parts/src/org/lineageos/settings/device/BootCompletedReceiver.java b/parts/src/org/lineageos/settings/device/BootCompletedReceiver.java
+deleted file mode 100644
+index cd5c346..0000000
+--- a/parts/src/org/lineageos/settings/device/BootCompletedReceiver.java
++++ /dev/null
+@@ -1,38 +0,0 @@
+-/*
+- * SPDX-FileCopyrightText: The LineageOS Project
+- * SPDX-License-Identifier: Apache-2.0
+- */
+-
+-package org.lineageos.settings.device;
+-
+-import android.content.BroadcastReceiver;
+-import android.content.Context;
+-import android.content.Intent;
+-import android.content.SharedPreferences;
+-import android.util.Log;
+-
+-import androidx.preference.PreferenceManager;
+-
+-import org.lineageos.settings.device.battery.BypassChargingController;
+-
+-public class BootCompletedReceiver extends BroadcastReceiver {
+-    private static final String TAG = "XiaomiParts-Boot";
+-
+-    @Override
+-    public void onReceive(Context context, Intent intent) {
+-        if (!Intent.ACTION_BOOT_COMPLETED.equals(intent.getAction())) {
+-            return;
+-        }
+-
+-        Log.i(TAG, "Boot completed: Initializing hardware states to defaults");
+-
+-        // Ensure Bypass Charging is OFF on boot
+-        FileUtils.writeLine(BypassChargingController.NODE_INPUT_SUSPEND, "0");
+-
+-        // Reset saved states in preferences
+-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+-        prefs.edit()
+-                .putBoolean(BypassChargingController.PREF_BYPASS_CHARGING, false)
+-                .apply();
+-    }
+-}
+diff --git a/parts/src/org/lineageos/settings/device/PartsActivity.java b/parts/src/org/lineageos/settings/device/PartsActivity.java
+index 2b40f88..afa8e97 100644
+--- a/parts/src/org/lineageos/settings/device/PartsActivity.java
++++ b/parts/src/org/lineageos/settings/device/PartsActivity.java
+@@ -7,9 +7,14 @@ package org.lineageos.settings.device;
+ 
+ import android.os.Bundle;
+ 
++import androidx.fragment.app.Fragment;
++import androidx.preference.Preference;
++import androidx.preference.PreferenceFragmentCompat;
++
+ import com.android.settingslib.collapsingtoolbar.CollapsingToolbarBaseActivity;
+ 
+-public class PartsActivity extends CollapsingToolbarBaseActivity {
++public class PartsActivity extends CollapsingToolbarBaseActivity
++        implements PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
+ 
+     @Override
+     protected void onCreate(Bundle savedInstanceState) {
+@@ -23,4 +28,17 @@ public class PartsActivity extends CollapsingToolbarBaseActivity {
+                     new PartsFragment()).commit();
+         }
+     }
++
++    @Override
++    public boolean onPreferenceStartFragment(PreferenceFragmentCompat caller, Preference pref) {
++        final Bundle args = pref.getExtras();
++        final Fragment fragment = getSupportFragmentManager().getFragmentFactory().instantiate(
++                getClassLoader(), pref.getFragment());
++        fragment.setArguments(args);
++        getSupportFragmentManager().beginTransaction()
++                .replace(com.android.settingslib.collapsingtoolbar.R.id.content_frame, fragment)
++                .addToBackStack(null)
++                .commit();
++        return true;
++    }
+ }
+diff --git a/parts/src/org/lineageos/settings/device/PartsFragment.java b/parts/src/org/lineageos/settings/device/PartsFragment.java
+index 3af4429..2b699d4 100644
+--- a/parts/src/org/lineageos/settings/device/PartsFragment.java
++++ b/parts/src/org/lineageos/settings/device/PartsFragment.java
+@@ -5,36 +5,35 @@
+ 
+ package org.lineageos.settings.device;
+ 
+-import android.content.BroadcastReceiver;
+ import android.content.Context;
+-import android.content.Intent;
+-import android.content.IntentFilter;
+ import android.os.Bundle;
+-import android.widget.Toast;
++import android.os.Handler;
++import android.os.Looper;
+ 
+ import androidx.preference.Preference;
+-import androidx.preference.PreferenceCategory;
+-import androidx.preference.SwitchPreferenceCompat;
+ 
+ import com.android.settingslib.widget.SettingsBasePreferenceFragment;
+ 
+-import org.lineageos.settings.device.battery.BypassChargingController;
++import org.lineageos.settings.device.battery.BatteryTelemetry;
+ 
+-public class PartsFragment extends SettingsBasePreferenceFragment
+-        implements Preference.OnPreferenceChangeListener {
++import java.util.Locale;
+ 
+-    private SwitchPreferenceCompat mBypassChargingPreference;
++public class PartsFragment extends SettingsBasePreferenceFragment {
+ 
+-    private final BroadcastReceiver mStateReceiver = new BroadcastReceiver() {
++    private Preference mTelemetryPowerPref;
++    private Preference mTelemetryUsbPref;
++    private Preference mTelemetryBatteryPref;
++    private Preference mTelemetrySpecsPref;
++
++    private final Handler mUiHandler = new Handler(Looper.getMainLooper());
++    private final Runnable mUiTicker = new Runnable() {
+         @Override
+-        public void onReceive(Context context, Intent intent) {
+-            String action = intent.getAction();
+-            if (BypassChargingController.ACTION_BYPASS_CHARGING_CHANGED.equals(action)
+-                    && mBypassChargingPreference != null) {
+-                boolean state = intent.getBooleanExtra(
+-                        BypassChargingController.EXTRA_BYPASS_CHARGING_STATE, false);
+-                mBypassChargingPreference.setChecked(state);
++        public void run() {
++            if (!isResumed()) {
++                return;
+             }
++            updateDashboard();
++            mUiHandler.postDelayed(this, 1000);
+         }
+     };
+ 
+@@ -42,58 +41,101 @@ public class PartsFragment extends SettingsBasePreferenceFragment
+     public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
+         setPreferencesFromResource(R.xml.parts_preferences, rootKey);
+ 
+-        mBypassChargingPreference = findPreference(BypassChargingController.PREF_BYPASS_CHARGING);
+-        if (mBypassChargingPreference != null) {
+-            if (!BypassChargingController.isSupported()) {
+-                PreferenceCategory batteryCat = findPreference("category_battery");
+-                if (batteryCat != null) {
+-                    getPreferenceScreen().removePreference(batteryCat);
+-                }
+-            } else {
+-                mBypassChargingPreference.setChecked(
+-                        BypassChargingController.isEnabled(getContext()));
+-                mBypassChargingPreference.setOnPreferenceChangeListener(this);
+-            }
+-        }
++        mTelemetryPowerPref = findPreference("pref_telemetry_power");
++        mTelemetryUsbPref = findPreference("pref_telemetry_usb");
++        mTelemetryBatteryPref = findPreference("pref_telemetry_battery");
++        mTelemetrySpecsPref = findPreference("pref_telemetry_specs");
+     }
+ 
+     @Override
+-    public void onStart() {
+-        super.onStart();
+-        IntentFilter filter = new IntentFilter(BypassChargingController.ACTION_BYPASS_CHARGING_CHANGED);
+-        requireContext().registerReceiver(mStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+-
+-        if (mBypassChargingPreference != null && BypassChargingController.isSupported()) {
+-            mBypassChargingPreference.setChecked(BypassChargingController.isEnabled(getContext()));
+-        }
++    public void onResume() {
++        super.onResume();
++        updateDashboard();
++        mUiHandler.post(mUiTicker);
+     }
+ 
+     @Override
+-    public void onStop() {
+-        try {
+-            requireContext().unregisterReceiver(mStateReceiver);
+-        } catch (IllegalArgumentException ignored) {
+-        }
+-        super.onStop();
++    public void onPause() {
++        mUiHandler.removeCallbacks(mUiTicker);
++        super.onPause();
+     }
+ 
+-    @Override
+-    public boolean onPreferenceChange(Preference preference, Object newValue) {
++    private void updateDashboard() {
+         Context context = getContext();
+         if (context == null) {
+-            return false;
++            return;
+         }
+ 
+-        boolean enabled = (Boolean) newValue;
+-        if (preference == mBypassChargingPreference) {
+-            if (enabled && !BypassChargingController.isPowerConnected(context)) {
+-                Toast.makeText(context, R.string.bypass_charging_connect_charger_toast,
+-                        Toast.LENGTH_SHORT).show();
+-                return false;
++        BatteryTelemetry t = BatteryTelemetry.readCurrentState(context);
++
++        double currentMa = Math.abs(t.currentNowUa) / 1000.0;
++        double voltageV = t.voltageNowUv / 1000000.0;
++        double vbusV = t.vbusUv / 1000000.0;
++        double usbCurrentA = t.usbCurrentMaxUa / 1000000.0;
++        long chargeMah = t.chargeCounterUah > 0 ? t.chargeCounterUah / 1000 : 0;
++        double resistanceKohms = t.resistanceId > 0 ? t.resistanceId / 1000.0 : 0.0;
++
++        // 1. Power & Current
++        if (mTelemetryPowerPref != null) {
++            if (t.isFull) {
++                mTelemetryPowerPref.setTitle("⚡ Аккумулятор заряжен (100%)");
++                mTelemetryPowerPref.setSummary(String.format(Locale.US,
++                        "Батарея полностью заряжена • Напряжение: %.3f В",
++                        voltageV));
++            } else if (t.isCharging) {
++                mTelemetryPowerPref.setTitle(String.format(Locale.US, "⚡ Зарядка: %.2f Вт", t.powerW));
++                mTelemetryPowerPref.setSummary(String.format(Locale.US,
++                        "Ток в батарею: +%.0f мА • Напряжение: %.3f В",
++                        currentMa, voltageV));
++            } else {
++                mTelemetryPowerPref.setTitle(String.format(Locale.US, "🔋 Разряд: %.2f Вт", t.powerW));
++                mTelemetryPowerPref.setSummary(String.format(Locale.US,
++                        "Расход системы: -%.0f мА • Напряжение: %.3f В",
++                        currentMa, voltageV));
+             }
+-            BypassChargingController.setEnabled(context, enabled);
+-            return true;
+         }
+-        return false;
++
++        // 2. Type-C & Protocol
++        if (mTelemetryUsbPref != null) {
++            if (t.isPlugged) {
++                String modeStr = t.turbo33w ? "Mi Turbo (33 Вт 🚀)" :
++                        ("USB (" + t.protocol + ")");
++                if (vbusV > 0 && usbCurrentA > 0) {
++                    mTelemetryUsbPref.setSummary(String.format(Locale.US,
++                            "Протокол: %s • Вход: %.2f В, %.2f А (~%.1f Вт от БП)",
++                            modeStr, vbusV, usbCurrentA, t.inputPowerW));
++                } else if (vbusV > 0) {
++                    mTelemetryUsbPref.setSummary(String.format(Locale.US,
++                            "Протокол: %s • Вход: %.2f В",
++                            modeStr, vbusV));
++                } else {
++                    mTelemetryUsbPref.setSummary("Протокол: " + modeStr + " • Кабель подключен");
++                }
++            } else {
++                mTelemetryUsbPref.setSummary("Кабель не подключен (Автономная работа)");
++            }
++        }
++
++        // 3. Battery Temperature & Health
++        if (mTelemetryBatteryPref != null) {
++            String tempStatus = t.tempC < 33.0 ? "Оптимальная" : (t.tempC < 38.0 ? "Тёплая" : "Высокая");
++            mTelemetryBatteryPref.setSummary(String.format(Locale.US,
++                    "Температура: %.1f °C (%s) • Здоровье: %d%% (%s) • Циклы: %d",
++                    t.tempC, tempStatus, t.soh, t.health, t.cycles));
++        }
++
++        // 4. Capacity & Hardware Specs
++        if (mTelemetrySpecsPref != null) {
++            StringBuilder specSb = new StringBuilder();
++            if (chargeMah > 0) {
++                specSb.append(String.format(Locale.US, "Заряд: %d мА·ч (из ~4250 мА·ч)", chargeMah));
++            } else {
++                specSb.append(String.format(Locale.US, "Уровень: %d%%", t.capacity));
++            }
++            if (resistanceKohms > 0) {
++                specSb.append(String.format(Locale.US, " • ID: %.1f кОм", resistanceKohms));
++            }
++            mTelemetrySpecsPref.setSummary(specSb.toString());
++        }
+     }
+ }
+diff --git a/parts/src/org/lineageos/settings/device/battery/BatterySettingsFragment.java b/parts/src/org/lineageos/settings/device/battery/BatterySettingsFragment.java
+new file mode 100644
+index 0000000..6dedf55
+--- /dev/null
++++ b/parts/src/org/lineageos/settings/device/battery/BatterySettingsFragment.java
+@@ -0,0 +1,11 @@
++/*
++ * SPDX-FileCopyrightText: The LineageOS Project
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++package org.lineageos.settings.device.battery;
++
++import org.lineageos.settings.device.PartsFragment;
++
++public class BatterySettingsFragment extends PartsFragment {
++}
+diff --git a/parts/src/org/lineageos/settings/device/battery/BatteryTelemetry.java b/parts/src/org/lineageos/settings/device/battery/BatteryTelemetry.java
+new file mode 100644
+index 0000000..fdce8a6
+--- /dev/null
++++ b/parts/src/org/lineageos/settings/device/battery/BatteryTelemetry.java
+@@ -0,0 +1,181 @@
++/*
++ * SPDX-FileCopyrightText: The LineageOS Project
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++package org.lineageos.settings.device.battery;
++
++import android.content.Context;
++import android.content.Intent;
++import android.content.IntentFilter;
++import android.os.BatteryManager;
++
++import org.lineageos.settings.device.FileUtils;
++
++public final class BatteryTelemetry {
++    public static final String NODE_CAPACITY = "/sys/class/power_supply/battery/capacity";
++    public static final String NODE_CURRENT_NOW = "/sys/class/power_supply/battery/current_now";
++    public static final String NODE_VOLTAGE_NOW = "/sys/class/power_supply/battery/voltage_now";
++    public static final String NODE_TEMP = "/sys/class/power_supply/battery/temp";
++    public static final String NODE_CHARGE_COUNTER = "/sys/class/power_supply/battery/charge_counter";
++    public static final String NODE_STATUS = "/sys/class/power_supply/battery/status";
++    public static final String NODE_HEALTH = "/sys/class/power_supply/battery/health";
++
++    public static final String NODE_USB_ONLINE = "/sys/class/power_supply/usb/online";
++    public static final String NODE_USB_VOLTAGE = "/sys/class/power_supply/usb/voltage_now";
++    public static final String NODE_USB_CURRENT_MAX = "/sys/class/power_supply/usb/current_max";
++
++    public static final String NODE_USB_REAL_TYPE = "/sys/class/qcom-battery/usb_real_type";
++    public static final String NODE_PD_VERIFIED = "/sys/class/qcom-battery/pd_verifed";
++    public static final String NODE_FASTCHG_MODE = "/sys/class/qcom-battery/fastchg_mode";
++    public static final String NODE_SOH = "/sys/class/qcom-battery/soh";
++    public static final String NODE_CYCLE = "/sys/class/qcom-battery/fg1_cycle";
++    public static final String NODE_RESISTANCE_ID = "/sys/class/qcom-battery/resistance_id";
++
++    public int capacity;           // % (0-100)
++    public long currentNowUa;      // microamps (< 0 for charging, > 0 for discharging in qcom)
++    public long voltageNowUv;      // microvolts
++    public double powerW;          // calculated power in Watts into/from battery
++    public double tempC;           // temperature in Celsius
++    public long chargeCounterUah;  // accumulated charge in uAh
++    public String status;          // "Charging", "Discharging", "Full", etc.
++    public String health;          // "Good", etc.
++    public boolean isCharging;     // True if battery is gaining energy
++    public boolean isFull;         // True if status is Full
++    public boolean isPlugged;      // True if USB VBUS > 3V or online == 1
++    public long vbusUv;            // VBUS voltage in microvolts
++    public long usbCurrentMaxUa;   // USB port input current limit in microamps
++    public double inputPowerW;     // Power drawn from charger in Watts (Vbus * Ibus)
++    public String protocol;        // SDP, DCP, QC3.0, PD, etc.
++    public boolean turbo33w;       // True if Xiaomi 33W Charge Pump active
++    public int soh;                // State of Health % (e.g. 100)
++    public int cycles;             // Battery charge cycles
++    public long resistanceId;      // Battery resistance ID in ohms
++    public long timestamp;         // System.currentTimeMillis()
++
++    public static BatteryTelemetry readCurrentState(Context context) {
++        BatteryTelemetry t = new BatteryTelemetry();
++        t.timestamp = System.currentTimeMillis();
++
++        // 1. Battery capacity & status from sysfs with BatteryManager fallback
++        t.capacity = readInt(NODE_CAPACITY, -1);
++        t.currentNowUa = readLong(NODE_CURRENT_NOW, 0);
++        t.voltageNowUv = readLong(NODE_VOLTAGE_NOW, 0);
++
++        long rawTemp = readLong(NODE_TEMP, 0);
++        t.tempC = rawTemp > 0 ? rawTemp / 10.0 : 0.0;
++
++        t.chargeCounterUah = readLong(NODE_CHARGE_COUNTER, 0);
++        t.status = readString(NODE_STATUS, "");
++        t.health = readString(NODE_HEALTH, "Good");
++
++        // Intent fallback if sysfs returned empty
++        if (context != null && (t.capacity < 0 || t.voltageNowUv == 0)) {
++            try {
++                Intent batteryIntent = context.registerReceiver(null,
++                        new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
++                if (batteryIntent != null) {
++                    if (t.capacity < 0) {
++                        int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
++                        int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
++                        if (level >= 0 && scale > 0) {
++                            t.capacity = (level * 100) / scale;
++                        }
++                    }
++                    if (t.voltageNowUv == 0) {
++                        t.voltageNowUv = batteryIntent.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 0) * 1000L;
++                    }
++                    if (t.tempC == 0.0) {
++                        int temp = batteryIntent.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0);
++                        t.tempC = temp / 10.0;
++                    }
++                    if (t.status.isEmpty()) {
++                        int statusInt = batteryIntent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
++                        if (statusInt == BatteryManager.BATTERY_STATUS_CHARGING) {
++                            t.status = "Charging";
++                        } else if (statusInt == BatteryManager.BATTERY_STATUS_FULL) {
++                            t.status = "Full";
++                        } else {
++                            t.status = "Discharging";
++                        }
++                    }
++                }
++            } catch (Exception ignored) {
++            }
++        }
++
++        if (t.capacity < 0) {
++            t.capacity = 0;
++        }
++        if (t.status.isEmpty()) {
++            t.status = "Discharging";
++        }
++
++        t.isFull = "Full".equalsIgnoreCase(t.status) || t.capacity >= 100;
++
++        // 2. USB and charger input
++        int usbOnline = readInt(NODE_USB_ONLINE, 0);
++        t.vbusUv = readLong(NODE_USB_VOLTAGE, 0);
++        t.usbCurrentMaxUa = readLong(NODE_USB_CURRENT_MAX, 0);
++        t.isPlugged = (usbOnline == 1) || (t.vbusUv >= 3000000);
++
++        // In Qualcomm fuel gauge, negative current indicates charging into battery
++        t.isCharging = (t.currentNowUa < -50000) || "Charging".equalsIgnoreCase(t.status);
++
++        t.protocol = readString(NODE_USB_REAL_TYPE, "USB");
++        int pdVerified = readInt(NODE_PD_VERIFIED, 0);
++        int fastChg = readInt(NODE_FASTCHG_MODE, 0);
++        // On lisa, fastchg_mode returns 33 (for 33W) or 1
++        t.turbo33w = (pdVerified >= 1 && (fastChg == 33 || fastChg == 1));
++
++        t.soh = readInt(NODE_SOH, 100);
++        t.cycles = readInt(NODE_CYCLE, 0);
++        t.resistanceId = readLong(NODE_RESISTANCE_ID, 0);
++
++        // Power calculation in Watts: P = (V * I)
++        double currentA = Math.abs(t.currentNowUa) / 1000000.0;
++        double voltageV = t.voltageNowUv / 1000000.0;
++        t.powerW = Math.round((currentA * voltageV) * 100.0) / 100.0;
++
++        // Input power calculation from charger: Pin = Vbus * Ibus
++        if (t.vbusUv > 0 && t.usbCurrentMaxUa > 0) {
++            double vbusV = t.vbusUv / 1000000.0;
++            double ibusA = t.usbCurrentMaxUa / 1000000.0;
++            t.inputPowerW = Math.round((vbusV * ibusA) * 100.0) / 100.0;
++        } else {
++            t.inputPowerW = 0.0;
++        }
++
++        return t;
++    }
++
++    private static int readInt(String path, int fallback) {
++        String val = FileUtils.readOneLine(path);
++        if (val != null) {
++            try {
++                return Integer.parseInt(val.trim());
++            } catch (NumberFormatException ignored) {
++            }
++        }
++        return fallback;
++    }
++
++    private static long readLong(String path, long fallback) {
++        String val = FileUtils.readOneLine(path);
++        if (val != null) {
++            try {
++                return Long.parseLong(val.trim());
++            } catch (NumberFormatException ignored) {
++            }
++        }
++        return fallback;
++    }
++
++    private static String readString(String path, String fallback) {
++        String val = FileUtils.readOneLine(path);
++        if (val != null && !val.trim().isEmpty()) {
++            return val.trim();
++        }
++        return fallback;
++    }
++}
+diff --git a/parts/src/org/lineageos/settings/device/battery/BypassChargingController.java b/parts/src/org/lineageos/settings/device/battery/BypassChargingController.java
+deleted file mode 100644
+index 945c190..0000000
+--- a/parts/src/org/lineageos/settings/device/battery/BypassChargingController.java
++++ /dev/null
+@@ -1,95 +0,0 @@
+-/*
+- * SPDX-FileCopyrightText: The LineageOS Project
+- * SPDX-License-Identifier: Apache-2.0
+- */
+-
+-package org.lineageos.settings.device.battery;
+-
+-import android.content.Context;
+-import android.content.Intent;
+-import android.content.IntentFilter;
+-import android.content.SharedPreferences;
+-import android.os.BatteryManager;
+-import android.util.Log;
+-
+-import androidx.preference.PreferenceManager;
+-
+-import org.lineageos.settings.device.FileUtils;
+-
+-public final class BypassChargingController {
+-    public static final String TAG = "BypassChargingCtrl";
+-    public static final String NODE_INPUT_SUSPEND = "/sys/class/qcom-battery/input_suspend";
+-    public static final String NODE_USB_VOLTAGE = "/sys/class/power_supply/usb/voltage_now";
+-    public static final String PREF_BYPASS_CHARGING = "pref_bypass_charging";
+-    public static final String ACTION_BYPASS_CHARGING_CHANGED =
+-            "org.lineageos.settings.device.ACTION_BYPASS_CHARGING_CHANGED";
+-    public static final String EXTRA_BYPASS_CHARGING_STATE = "extra_bypass_charging_state";
+-
+-    private BypassChargingController() {
+-    }
+-
+-    public static boolean isSupported() {
+-        return FileUtils.fileExists(NODE_INPUT_SUSPEND);
+-    }
+-
+-    public static boolean isPowerConnected(Context context) {
+-        String val = FileUtils.readOneLine(NODE_USB_VOLTAGE);
+-        if (val != null) {
+-            try {
+-                if (Long.parseLong(val.trim()) >= 3000000) {
+-                    return true;
+-                }
+-            } catch (NumberFormatException ignored) {
+-            }
+-        }
+-        Intent intent = context.registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+-        if (intent == null) {
+-            return false;
+-        }
+-        int plugged = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0);
+-        return plugged == BatteryManager.BATTERY_PLUGGED_AC
+-                || plugged == BatteryManager.BATTERY_PLUGGED_USB
+-                || plugged == BatteryManager.BATTERY_PLUGGED_WIRELESS;
+-    }
+-
+-    public static boolean isEnabled(Context context) {
+-        String val = FileUtils.readOneLine(NODE_INPUT_SUSPEND);
+-        if (val != null) {
+-            return "1".equals(val.trim());
+-        }
+-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+-        return prefs.getBoolean(PREF_BYPASS_CHARGING, false);
+-    }
+-
+-    public static void setEnabled(Context context, boolean enable) {
+-        if (!isSupported()) {
+-            Log.w(TAG, "Bypass charging node not found on this device");
+-            return;
+-        }
+-
+-        boolean success = FileUtils.writeLine(NODE_INPUT_SUSPEND, enable ? "1" : "0");
+-        if (success) {
+-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+-            prefs.edit().putBoolean(PREF_BYPASS_CHARGING, enable).apply();
+-
+-            try {
+-                Intent serviceIntent = new Intent(context, BypassChargingMonitorService.class);
+-                if (enable) {
+-                    context.startService(serviceIntent);
+-                } else {
+-                    context.stopService(serviceIntent);
+-                }
+-            } catch (Exception e) {
+-                Log.e(TAG, "Failed to start/stop BypassChargingMonitorService", e);
+-            }
+-
+-            Intent broadcast = new Intent(ACTION_BYPASS_CHARGING_CHANGED);
+-            broadcast.putExtra(EXTRA_BYPASS_CHARGING_STATE, enable);
+-            broadcast.setPackage(context.getPackageName());
+-            context.sendBroadcast(broadcast);
+-            Log.d(TAG, "Bypass charging set to " + enable);
+-        } else {
+-            Log.e(TAG, "Failed to write to input_suspend: " + enable);
+-        }
+-    }
+-}
+diff --git a/parts/src/org/lineageos/settings/device/battery/BypassChargingMonitorService.java b/parts/src/org/lineageos/settings/device/battery/BypassChargingMonitorService.java
+deleted file mode 100644
+index a153857..0000000
+--- a/parts/src/org/lineageos/settings/device/battery/BypassChargingMonitorService.java
++++ /dev/null
+@@ -1,82 +0,0 @@
+-/*
+- * SPDX-FileCopyrightText: The LineageOS Project
+- * SPDX-License-Identifier: Apache-2.0
+- */
+-
+-package org.lineageos.settings.device.battery;
+-
+-import android.app.Service;
+-import android.content.BroadcastReceiver;
+-import android.content.Context;
+-import android.content.Intent;
+-import android.content.IntentFilter;
+-import android.os.IBinder;
+-import android.util.Log;
+-
+-import org.lineageos.settings.device.FileUtils;
+-
+-public class BypassChargingMonitorService extends Service {
+-    private static final String TAG = "BypassChgMonitor";
+-    private static final String NODE_USB_VOLTAGE = "/sys/class/power_supply/usb/voltage_now";
+-
+-    private final BroadcastReceiver mPowerReceiver = new BroadcastReceiver() {
+-        @Override
+-        public void onReceive(Context context, Intent intent) {
+-            if (Intent.ACTION_POWER_DISCONNECTED.equals(intent.getAction())) {
+-                // When input_suspend is set to 1, Android detects charging stopped and fires ACTION_POWER_DISCONNECTED.
+-                // But the physical USB cable is still connected (VBUS is ~5V / >3V).
+-                // Only reset bypass charging if the USB cable was physically unplugged (voltage drops below 3V or node missing).
+-                if (isPhysicallyDisconnected()) {
+-                    Log.d(TAG, "Charger physically disconnected, resetting bypass charging mode");
+-                    BypassChargingController.setEnabled(context, false);
+-                    stopSelf();
+-                } else {
+-                    Log.d(TAG, "ACTION_POWER_DISCONNECTED received due to input_suspend, cable still connected");
+-                }
+-            }
+-        }
+-    };
+-
+-    private boolean isPhysicallyDisconnected() {
+-        String val = FileUtils.readOneLine(NODE_USB_VOLTAGE);
+-        if (val == null) {
+-            return true;
+-        }
+-        try {
+-            long voltage = Long.parseLong(val.trim());
+-            // Voltage is in microvolts (e.g. 5000000 = 5V). Below 3V means unplugged.
+-            return voltage < 3000000;
+-        } catch (NumberFormatException e) {
+-            return true;
+-        }
+-    }
+-
+-    @Override
+-    public void onCreate() {
+-        super.onCreate();
+-        IntentFilter filter = new IntentFilter();
+-        filter.addAction(Intent.ACTION_POWER_DISCONNECTED);
+-        registerReceiver(mPowerReceiver, filter);
+-        Log.d(TAG, "BypassChargingMonitorService started");
+-    }
+-
+-    @Override
+-    public int onStartCommand(Intent intent, int flags, int startId) {
+-        return START_STICKY;
+-    }
+-
+-    @Override
+-    public void onDestroy() {
+-        try {
+-            unregisterReceiver(mPowerReceiver);
+-        } catch (IllegalArgumentException ignored) {
+-        }
+-        Log.d(TAG, "BypassChargingMonitorService stopped");
+-        super.onDestroy();
+-    }
+-
+-    @Override
+-    public IBinder onBind(Intent intent) {
+-        return null;
+-    }
+-}
+diff --git a/parts/src/org/lineageos/settings/device/battery/BypassChargingTileService.java b/parts/src/org/lineageos/settings/device/battery/BypassChargingTileService.java
+deleted file mode 100644
+index f8e324e..0000000
+--- a/parts/src/org/lineageos/settings/device/battery/BypassChargingTileService.java
++++ /dev/null
+@@ -1,75 +0,0 @@
+-/*
+- * SPDX-FileCopyrightText: The LineageOS Project
+- * SPDX-License-Identifier: Apache-2.0
+- */
+-
+-package org.lineageos.settings.device.battery;
+-
+-import android.content.BroadcastReceiver;
+-import android.content.Context;
+-import android.content.Intent;
+-import android.content.IntentFilter;
+-import android.service.quicksettings.Tile;
+-import android.service.quicksettings.TileService;
+-import android.widget.Toast;
+-
+-import org.lineageos.settings.device.R;
+-
+-public class BypassChargingTileService extends TileService {
+-
+-    private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
+-        @Override
+-        public void onReceive(Context context, Intent intent) {
+-            if (BypassChargingController.ACTION_BYPASS_CHARGING_CHANGED.equals(intent.getAction())) {
+-                updateTileState(intent.getBooleanExtra(
+-                        BypassChargingController.EXTRA_BYPASS_CHARGING_STATE, false));
+-            }
+-        }
+-    };
+-
+-    @Override
+-    public void onStartListening() {
+-        super.onStartListening();
+-        IntentFilter filter = new IntentFilter(BypassChargingController.ACTION_BYPASS_CHARGING_CHANGED);
+-        registerReceiver(mReceiver, filter, Context.RECEIVER_NOT_EXPORTED);
+-        updateTileState(BypassChargingController.isEnabled(this));
+-    }
+-
+-    @Override
+-    public void onStopListening() {
+-        try {
+-            unregisterReceiver(mReceiver);
+-        } catch (IllegalArgumentException ignored) {
+-        }
+-        super.onStopListening();
+-    }
+-
+-    @Override
+-    public void onClick() {
+-        super.onClick();
+-        boolean currentState = BypassChargingController.isEnabled(this);
+-        if (!currentState) {
+-            if (!BypassChargingController.isPowerConnected(this)) {
+-                Toast.makeText(this, R.string.bypass_charging_connect_charger_toast,
+-                        Toast.LENGTH_SHORT).show();
+-                updateTileState(false);
+-                return;
+-            }
+-            BypassChargingController.setEnabled(this, true);
+-            updateTileState(true);
+-        } else {
+-            BypassChargingController.setEnabled(this, false);
+-            updateTileState(false);
+-        }
+-    }
+-
+-    private void updateTileState(boolean active) {
+-        Tile tile = getQsTile();
+-        if (tile == null) {
+-            return;
+-        }
+-        tile.setState(active ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE);
+-        tile.setSubtitle(getString(active ? R.string.tile_state_on : R.string.tile_state_off));
+-        tile.updateTile();
+-    }
+-}
+-- 
+2.56.0
+
