@@ -1,7 +1,7 @@
 From 832282e024bf47cf4bc2a750eb69e02b885148cc Mon Sep 17 00:00:00 2001
 From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
 Date: Fri, 16 Oct 2026 21:33:57 +0300
-Subject: [PATCH 26/26] parts: battery: Map charging watt limit down to levels
+Subject: [PATCH 26/27] parts: battery: Map charging watt limit down to levels
  16-20 for 1-10W
 
 Change-Id: I8c5736e02e9013e6afd1559e178488b4d4a71ddb

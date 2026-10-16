@@ -1,7 +1,7 @@
 From 977fafb57ec85fc8426ab7090384b8c432e06828 Mon Sep 17 00:00:00 2001
 From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
 Date: Thu, 15 Oct 2026 20:05:25 +0300
-Subject: [PATCH 25/26] parts: battery: Fix watt limiter nodes, signed power
+Subject: [PATCH 25/27] parts: battery: Fix watt limiter nodes, signed power
  display, and cool_mode
 
 Change-Id: I776e65cec91e16bc3619f5ce88b13203f7a62562

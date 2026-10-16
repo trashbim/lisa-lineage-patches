@@ -1,7 +1,7 @@
 From f4deaa51a676594ee3b1f9ef03668cbceaba7c1a Mon Sep 17 00:00:00 2001
 From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
 Date: Thu, 15 Oct 2026 01:46:34 +0300
-Subject: [PATCH 15/26] sm8350-common: Optimize touch responsiveness,
+Subject: [PATCH 15/27] sm8350-common: Optimize touch responsiveness,
  background AOT dexopt and HWUI HintManager
 
 - Reduce tap timeout from 100ms to 60ms and touch slop from 8dp to 5dp

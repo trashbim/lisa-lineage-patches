@@ -1,7 +1,7 @@
 From 3fb8a864e4778f74b047ee5c1a164b99501a1b09 Mon Sep 17 00:00:00 2001
 From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
 Date: Thu, 15 Oct 2026 08:56:35 +0300
-Subject: [PATCH 16/26] sm8350-common: Disable conservative_pl, enable async
+Subject: [PATCH 16/27] sm8350-common: Disable conservative_pl, enable async
  powermode, and configure LMKD anti-thrashing
 
 - Set sched_conservative_pl=0 to allow 100% of predicted CPU load frequency scaling.

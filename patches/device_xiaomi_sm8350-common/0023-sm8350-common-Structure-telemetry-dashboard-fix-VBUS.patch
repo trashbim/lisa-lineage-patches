@@ -1,7 +1,7 @@
 From 1bbefe97f1c0642b81c5af92d2897c996c0f5a77 Mon Sep 17 00:00:00 2001
 From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
 Date: Thu, 15 Oct 2026 19:25:28 +0300
-Subject: [PATCH 23/26] sm8350-common: Structure telemetry dashboard, fix VBUS
+Subject: [PATCH 23/27] sm8350-common: Structure telemetry dashboard, fix VBUS
  display and charging current limit
 
 Change-Id: I9614fcde5426fa662f897f70e8e1e6e8177ff4bd
