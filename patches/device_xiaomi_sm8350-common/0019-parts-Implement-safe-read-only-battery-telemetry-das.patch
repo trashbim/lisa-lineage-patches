@@ -1,7 +1,7 @@
 From 08d0dbae56c7f762244d1e60b9352f23a10adece Mon Sep 17 00:00:00 2001
 From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
 Date: Sat, 17 Oct 2026 00:28:48 +0300
-Subject: [PATCH 19/20] parts: Implement safe read-only battery telemetry
+Subject: [PATCH 19/21] parts: Implement safe read-only battery telemetry
  dashboard
 
 Change-Id: I8cbcfe01e6b33bfe1ae5706d298b8a669920f081
