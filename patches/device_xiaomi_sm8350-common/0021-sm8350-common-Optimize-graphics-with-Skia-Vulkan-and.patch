@@ -1,7 +1,7 @@
 From 41239dbd587f8b0404db0100ca16e446a9c41f7a Mon Sep 17 00:00:00 2001
 From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
 Date: Sat, 17 Oct 2026 01:59:50 +0300
-Subject: [PATCH 21/23] sm8350-common: Optimize graphics with Skia Vulkan and
+Subject: [PATCH 21/24] sm8350-common: Optimize graphics with Skia Vulkan and
  tune VM dirty ratios
 
 - Enable ro.hwui.use_vulkan=true for Skia Vulkan rendering backend

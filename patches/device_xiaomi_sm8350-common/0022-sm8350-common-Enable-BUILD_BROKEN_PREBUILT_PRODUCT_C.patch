@@ -1,7 +1,7 @@
 From 83e166b3002fd6e2d5ec23e8780670b6d00184ae Mon Sep 17 00:00:00 2001
 From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
 Date: Sat, 17 Oct 2026 02:18:59 +0300
-Subject: [PATCH 22/23] sm8350-common: Enable
+Subject: [PATCH 22/24] sm8350-common: Enable
  BUILD_BROKEN_PREBUILT_PRODUCT_COPY_FILES for GApps integration
 
 Change-Id: I7d660d93fb5cc431ce8a0246c99cf4e955225213

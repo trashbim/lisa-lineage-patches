@@ -1,7 +1,7 @@
 From f95a43f9fbbaa1bfd747876c84f619443cb57fba Mon Sep 17 00:00:00 2001
 From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
 Date: Sat, 17 Oct 2026 02:28:51 +0300
-Subject: [PATCH 23/23] sm8350-common: Set TARGET_USES_VULKAN := true and fix
+Subject: [PATCH 23/24] sm8350-common: Set TARGET_USES_VULKAN := true and fix
  sysprop duplicates
 
 - Enable TARGET_USES_VULKAN := true in BoardConfig to generate ro.hwui.use_vulkan=true

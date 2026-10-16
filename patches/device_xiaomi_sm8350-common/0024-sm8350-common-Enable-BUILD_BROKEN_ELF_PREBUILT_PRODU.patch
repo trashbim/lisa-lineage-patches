@@ -1,0 +1,27 @@
+From 6fec64f7bf2a5150f16f95d2deb04b885fb6b54e Mon Sep 17 00:00:00 2001
+From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
+Date: Sat, 17 Oct 2026 02:33:29 +0300
+Subject: [PATCH 24/24] sm8350-common: Enable
+ BUILD_BROKEN_ELF_PREBUILT_PRODUCT_COPY_FILES for MindTheGapps shared
+ libraries
+
+Change-Id: Id1d49a3faf9f9135ebd641687e82f02429d87135
+---
+ BoardConfigCommon.mk | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/BoardConfigCommon.mk b/BoardConfigCommon.mk
+index 96e2613..a791481 100644
+--- a/BoardConfigCommon.mk
++++ b/BoardConfigCommon.mk
+@@ -199,6 +199,7 @@ WPA_SUPPLICANT_VERSION := VER_0_8_X
+ 
+ # Build rules
+ BUILD_BROKEN_PREBUILT_PRODUCT_COPY_FILES := true
++BUILD_BROKEN_ELF_PREBUILT_PRODUCT_COPY_FILES := true
+ 
+ # Inherit proprietary blobs
+ include vendor/xiaomi/sm8350-common/BoardConfigVendor.mk
+-- 
+2.56.0
+
