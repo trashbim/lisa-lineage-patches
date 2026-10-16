@@ -1,7 +1,7 @@
 From ae885f29090b538426eb15f3b791f034d87a6269 Mon Sep 17 00:00:00 2001
 From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
 Date: Thu, 15 Oct 2026 09:21:03 +0300
-Subject: [PATCH 17/27] sm8350-common: Optimize CPU governor predictive load,
+Subject: [PATCH 17/18] sm8350-common: Optimize CPU governor predictive load,
  disable mlid, and tune ART concurrency
 
 - Enable predictive load (pl=1) across all CPU clusters on Yupik (SM7325)
