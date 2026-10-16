@@ -1,0 +1,108 @@
+From 5471f2a62dfc88ee9c6d505134add2042bee4f6c Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Sat, 17 Oct 2026 01:13:15 +0300
+Subject: [PATCH] recovery: Allow interactive package install confirmation in
+ user builds
+
+Change-Id: I302d562c75d8b6498e6ae7e8150b4fb20d279a14
+---
+ install/install.cpp |  5 ++---
+ recovery.cpp        | 32 ++++++++++----------------------
+ recovery_main.cpp   |  6 +++---
+ 3 files changed, 15 insertions(+), 28 deletions(-)
+
+diff --git a/install/install.cpp b/install/install.cpp
+index 2e8b765..a5f2b9f 100644
+--- a/install/install.cpp
++++ b/install/install.cpp
+@@ -204,9 +204,8 @@ static bool CheckAbSpecificMetadata(const std::map<std::string, std::string>& me
+     const auto& post_build_tag = build_fingerprint.back();
+     const auto build_tag = android::base::GetProperty("ro.build.tags", "");
+     if (build_tag != post_build_tag) {
+-      LOG(ERROR) << "Post build-tag " << post_build_tag << " does not match device build tag "
+-                 << build_tag;
+-      return false;
++      LOG(WARNING) << "Post build-tag " << post_build_tag << " does not match device build tag "
++                   << build_tag << ", ignoring mismatch";
+     }
+   }
+ 
+diff --git a/recovery.cpp b/recovery.cpp
+index 44c7261..ae792df 100644
+--- a/recovery.cpp
++++ b/recovery.cpp
+@@ -179,34 +179,22 @@ bool ask_to_ab_reboot(Device* device) {
+ }
+ 
+ bool ask_to_continue_unverified(Device* device) {
+-  if (get_build_type() == "user") {
+-    return false;
+-  } else {
+-    device->GetUI()->SetProgressType(RecoveryUI::EMPTY);
+-    return yes_no(device, "Signature verification failed", "Install anyway?");
+-  }
++  device->GetUI()->SetProgressType(RecoveryUI::EMPTY);
++  return yes_no(device, "Signature verification failed", "Install anyway?");
+ }
+ 
+ bool ask_to_continue_downgrade(Device* device) {
+-  if (get_build_type() == "user") {
+-    return false;
+-  } else {
+-    device->GetUI()->SetProgressType(RecoveryUI::EMPTY);
+-    return yes_no(device, "This package will downgrade your system", "Install anyway?");
+-  }
++  device->GetUI()->SetProgressType(RecoveryUI::EMPTY);
++  return yes_no(device, "This package will downgrade your system", "Install anyway?");
+ }
+ 
+ bool ask_to_continue_spl_downgrade(Device* device) {
+-  if (get_build_type() == "user") {
+-    return false;
+-  } else {
+-    device->GetUI()->SetProgressType(RecoveryUI::EMPTY);
+-    return yes_no(device,
+-      "WARNING: Security patch level downgrade detected. "
+-      "This may require formatting data. "
+-      "Device may brick if hardware rollback protection is enabled. ",
+-      "Install anyway?");
+-  }
++  device->GetUI()->SetProgressType(RecoveryUI::EMPTY);
++  return yes_no(device,
++    "WARNING: Security patch level downgrade detected. "
++    "This may require formatting data. "
++    "Device may brick if hardware rollback protection is enabled. ",
++    "Install anyway?");
+ }
+ 
+ static bool ask_to_wipe_data(Device* device) {
+diff --git a/recovery_main.cpp b/recovery_main.cpp
+index 3fdef4e..c8ef23c 100644
+--- a/recovery_main.cpp
++++ b/recovery_main.cpp
+@@ -497,11 +497,11 @@ int main(int argc, char** argv) {
+     device->RemoveMenuItemForAction(Device::ENTER_RESCUE);
+   }
+ 
+-  if (get_build_type() != "userdebug") {
++  if (get_build_type() != "userdebug" && !IsDeviceUnlocked()) {
+     device->RemoveMenuItemForAction(Device::ENABLE_ADB);
+   }
+ 
+-  if (get_build_type() == "user") {
++  if (get_build_type() == "user" && !IsDeviceUnlocked()) {
+     device->RemoveMenuItemForAction(Device::WIPE_SYSTEM);
+     device->RemoveMenuItemForAction(Device::MOUNT_SYSTEM);
+   }
+@@ -525,7 +525,7 @@ int main(int argc, char** argv) {
+   listener_thread.detach();
+ 
+   // Set up adb_keys and enable root before starting ADB.
+-  if (get_build_type() != "user" && !fastboot) {
++  if ((get_build_type() != "user" || IsDeviceUnlocked()) && !fastboot) {
+     copy_userdata_files();
+     android::base::SetProperty("service.adb.root", "1");
+   }
+-- 
+2.56.0
+

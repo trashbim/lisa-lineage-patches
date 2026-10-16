@@ -20,6 +20,7 @@ log_warn()  { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
 PROJECTS=(
+    "bootable/recovery:bootable_recovery"
     "device/xiaomi/lisa:device_xiaomi_lisa"
     "device/xiaomi/sm8350-common:device_xiaomi_sm8350-common"
     "frameworks/base:frameworks_base"
