@@ -1,7 +1,7 @@
 From 1a6ec27e05abf5e3e8874021cfa67a109ce227c6 Mon Sep 17 00:00:00 2001
 From: Valera <valera@example.com>
 Date: Thu, 24 Sep 2026 21:34:27 +0300
-Subject: [PATCH] utils.mk: Bypass radio file SHA1 check
+Subject: [PATCH 1/2] utils.mk: Bypass radio file SHA1 check
 
 Change-Id: I91acf260654c88cf7c7e9e2ae0592c034d6b2d10
 ---

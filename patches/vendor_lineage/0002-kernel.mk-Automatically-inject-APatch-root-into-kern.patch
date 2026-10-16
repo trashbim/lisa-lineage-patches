@@ -1,0 +1,29 @@
+From 163d8b1ed2e3722eabca8a9f02846ed060f3f900 Mon Sep 17 00:00:00 2001
+From: Valera <valera@example.com>
+Date: Sat, 17 Oct 2026 01:21:11 +0300
+Subject: [PATCH 2/2] kernel.mk: Automatically inject APatch root into kernel
+ image during build
+
+Change-Id: I9b69fea5b1687fda266b7e844f9fe2ab2cd60257
+---
+ build/tasks/kernel.mk | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/build/tasks/kernel.mk b/build/tasks/kernel.mk
+index a4846e3..3b4f2a4 100644
+--- a/build/tasks/kernel.mk
++++ b/build/tasks/kernel.mk
+@@ -832,6 +832,10 @@ $(INSTALLED_KERNEL_TARGET): $(KERNEL_BIN)
+ 	$(transform-prebuilt-to-target)
+ 	$(if $(filter true,$(FULL_KERNEL_BUILD)),\
+ 		$(call append-dtbs-to-kernel-image,$(KERNEL_OUT),$@))
++	$(hide) if [ -f "tools/apatch/kptools" ] && [ -f "$$HOME/.apatch_superkey" ]; then \
++		echo "Injecting APatch root into kernel image ($@)..."; \
++		tools/apatch/kptools -p -i "$@" -k "tools/apatch/kpimg-android" -S "$$(cat $$HOME/.apatch_superkey)" -o "$@.patched" && mv -f "$@.patched" "$@"; \
++	fi
+ endif
+ 
+ .PHONY: kernel
+-- 
+2.56.0
+

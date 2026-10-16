@@ -1,0 +1,28 @@
+From 5873038b1a6bd9e074edb85f9f5755cbcfc540c5 Mon Sep 17 00:00:00 2001
+From: trashbim <xmdbsmzdsjcbfmdjc@gmail.com>
+Date: Sat, 17 Oct 2026 01:21:05 +0300
+Subject: [PATCH 20/20] sm8350-common: Integrate MindTheGapps into ROM build
+
+Change-Id: I176e6aaa43e213b32392fa3684da95d7de40f340
+---
+ common.mk | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/common.mk b/common.mk
+index d48ebca..a13987c 100644
+--- a/common.mk
++++ b/common.mk
+@@ -511,3 +511,10 @@ PRODUCT_PACKAGES += \
+ PRODUCT_PACKAGES += \
+     Traceur
+ 
++# MindTheGapps integration
++GAPPS_PATH := tools/gapps_mindthegapps/system
++ifneq ($(wildcard $(GAPPS_PATH)/product/*),)
++PRODUCT_COPY_FILES += $(call find-copy-subdir-files,*,$(GAPPS_PATH)/product,$(TARGET_COPY_OUT_PRODUCT))
++PRODUCT_COPY_FILES += $(call find-copy-subdir-files,*,$(GAPPS_PATH)/system_ext,$(TARGET_COPY_OUT_SYSTEM_EXT))
++endif
++
+-- 
+2.56.0
+
